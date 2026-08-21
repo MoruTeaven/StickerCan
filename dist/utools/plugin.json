@@ -1,0 +1,36 @@
+{
+  "pluginName": "表情罐头",
+  "name": "表情罐头",
+  "version": "1.0.0",
+  "description": "一个功能强大的表情包管理插件，支持云存储和标签管理",
+  "author": "抹露茶柒",
+  "homepage": "https://sticker.moruteaven.com/",
+  "main": "index.html",
+  "logo": "logo.png",
+  "platform": ["win32", "darwin", "linux"],
+  "preload": "preload.js",
+  "development": {
+    "buildPath": "./build"
+  },
+  "features": [
+    {
+      "code": "表情罐头",
+      "explain": "表情包管理工具，支持本地和云端存储",
+      "icon": "logo.png",
+      "cmds": ["表情包", "表情", "表情罐头"]
+    }
+  ],
+  "permissions": [
+    "db",
+    "shell",
+    "clipboard",
+    "fileSystem"
+  ],
+  "keywords": [
+    "表情包",
+    "emoji",
+    "贴图",
+    "云存储",
+    "表情管理"
+  ]
+}

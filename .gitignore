@@ -7,7 +7,8 @@
 *~
 
 # 字体文件（较大，可通过包管理器获取）
-源码/lib/fonts/
+clients/utools/lib/fonts/
+dist/utools/lib/fonts/
 
 # 本地测试和日志
 *.log
