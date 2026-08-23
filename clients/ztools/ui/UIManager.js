@@ -257,20 +257,27 @@ class UIManager {
     const cw = document.getElementById('cloudImageWrapper');
     const li = document.getElementById('modalLocalImage');
     const ci = document.getElementById('modalCloudImage');
-    lw.style.display = 'none'; cw.style.display = 'none';
+    if (lw) lw.style.display = 'none';
+    if (cw) cw.style.display = 'none';
     if (emotion.storageType === 'cloud') {
-      ci.src = emotion.url; cw.style.display = 'block';
+      if (ci) ci.src = emotion.url;
+      if (cw) cw.style.display = 'block';
       const p = this.emotionService.findPairedEmotion(emotion, 'local');
-      if (p) { li.src = p.url; lw.style.display = 'block'; }
+      if (p) { if (li) li.src = p.url; if (lw) lw.style.display = 'block'; }
     } else {
-      li.src = emotion.url; lw.style.display = 'block';
+      if (li) li.src = emotion.url;
+      if (lw) lw.style.display = 'block';
       const p = this.emotionService.findPairedEmotion(emotion, 'cloud');
-      if (p) { ci.src = p.url; cw.style.display = 'block'; }
+      if (p) { if (ci) ci.src = p.url; if (cw) cw.style.display = 'block'; }
     }
     const badge = document.getElementById('storageBadge');
-    badge.className = 'storage-badge ' + emotion.storageType;
-    badge.querySelector('.badge-icon').className = 'mdi mdi-' + (emotion.storageType === 'cloud' ? 'cloud' : 'folder');
-    badge.querySelector('.badge-text').textContent = emotion.storageType === 'cloud' ? '云端存储' : '本地存储';
+    if (badge) {
+      badge.className = 'storage-badge ' + emotion.storageType;
+      const bIcon = badge.querySelector('.badge-icon');
+      if (bIcon) bIcon.className = 'badge-icon mdi mdi-' + (emotion.storageType === 'cloud' ? 'cloud' : 'folder');
+      const bText = badge.querySelector('.badge-text');
+      if (bText) bText.textContent = emotion.storageType === 'cloud' ? '云端存储' : '本地存储';
+    }
     const cb = document.getElementById('convertBtn');
     if (cb) {
       const hp = emotion.storageType === 'cloud'
@@ -284,10 +291,13 @@ class UIManager {
         cb.disabled = false;
       }
     }
-    document.getElementById('tagList').innerHTML = emotion.tags.map(t => '<span class="tag">' + HtmlUtils.escapeHtml(t) + '</span>').join('');
-    document.getElementById('tagEditor').style.display = 'none';
-    document.getElementById('tagList').style.display = 'flex';
-    document.getElementById('editTagsBtn').innerHTML = '<i class="mdi mdi-tag"></i><span>编辑标签</span>';
+    const tl = document.getElementById('tagList');
+    const te = document.getElementById('tagEditor');
+    const eb = document.getElementById('editTagsBtn');
+    if (tl) tl.innerHTML = emotion.tags.map(t => '<span class="tag">' + HtmlUtils.escapeHtml(t) + '</span>').join('');
+    if (te) te.style.display = 'none';
+    if (tl) tl.style.display = 'flex';
+    if (eb) eb.innerHTML = '<i class="mdi mdi-tag"></i><span>编辑标签</span>';
     this.showModal('emotionModal');
   }
 
@@ -709,11 +719,20 @@ class UIManager {
 
     // 图片放大遮罩
     document.querySelectorAll('.zoomable-image').forEach(img => {
-      img.addEventListener('click', () => this._showImageZoom(img.src));
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._showImageZoom(img.src);
+      });
     });
     const zoomOverlay = document.getElementById('imageZoomOverlay');
     if (zoomOverlay) {
-      zoomOverlay.addEventListener('click', () => this._hideImageZoom());
+      zoomOverlay.addEventListener('click', (e) => {
+        if (e.target === zoomOverlay) this._hideImageZoom();
+      });
+    }
+    const zoomedImg = document.getElementById('zoomedImage');
+    if (zoomedImg) {
+      zoomedImg.addEventListener('click', (e) => e.stopPropagation());
     }
   }
 

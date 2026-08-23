@@ -22,7 +22,6 @@ class ChangelogManager {
           fixed: [],
           improved: [],
           removed: [
-            '移除了首页自定义搜索框及相关样式，改用平台原生搜索'
           ]
         }
       },

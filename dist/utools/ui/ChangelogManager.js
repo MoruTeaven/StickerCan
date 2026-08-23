@@ -11,7 +11,9 @@ class ChangelogManager {
         version: '1.2.0',
         date: '2026-08-23',
         changes: {
-          added: [],
+          added: [
+            '增加了表情详情中点击图片放大查看的功能'
+          ],
           adjusted: [
             '将搜索框改为平台原生子输入框，提升搜索体验',
             '重新设计搜索选项卡样式，采用药丸式设计更紧凑美观',
@@ -20,21 +22,7 @@ class ChangelogManager {
           fixed: [],
           improved: [],
           removed: [
-            '移除了首页自定义搜索框及相关样式，改用平台原生搜索'
           ]
-        }
-      },
-      {
-        version: '1.1.2',
-        date: '2026-08-23',
-        changes: {
-          added: [
-            '增加了表情详情中点击图片放大查看的功能'
-          ],
-          adjusted: [],
-          fixed: [],
-          improved: [],
-          removed: []
         }
       },
       {
