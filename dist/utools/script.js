@@ -8,16 +8,15 @@
  * 4. 暴露全局对象供 HTML onclick 使用
  */
 
-const { createApp } = require('./core/core.js');
-const UToolsStorageProvider = require('./adapters/UToolsStorageProvider.js');
-const UToolsClipboardProvider = require('./adapters/UToolsClipboardProvider.js');
-const UToolsFileProvider = require('./adapters/UToolsFileProvider.js');
-const UToolsHttpProvider = require('./adapters/UToolsHttpProvider.js');
-const UToolsNotificationProvider = require('./adapters/UToolsNotificationProvider.js');
-const ThemeManager = require('./ui/ThemeManager.js');
-const ChangelogManager = require('./ui/ChangelogManager.js');
-const UIManager = require('./ui/UIManager.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
 // 添加动画样式
 const style = document.createElement('style');
 style.textContent = `
@@ -58,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const httpProvider = new UToolsHttpProvider();
 
     // 先创建 ThemeManager（NotificationProvider 依赖它）
-    const settingsService = new (require('./core/services/SettingsService.js'))({
+    const settingsService = new (SettingsService)({
       storageProvider,
       fileProvider,
     });
@@ -180,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileProvider = new UToolsFileProvider();
     const httpProvider = new UToolsHttpProvider();
 
-    const settingsService = new (require('./core/services/SettingsService.js'))({
+    const settingsService = new (SettingsService)({
       storageProvider,
       fileProvider,
     });

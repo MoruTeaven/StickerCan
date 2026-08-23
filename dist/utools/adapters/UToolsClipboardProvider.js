@@ -4,8 +4,7 @@
  * 实现 ClipboardProvider 接口，封装 utools.copyImage。
  */
 
-const ClipboardProvider = require('../core/interfaces/ClipboardProvider.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
 class UToolsClipboardProvider extends ClipboardProvider {
   copyImage(imageData) {
     utools.copyImage(imageData);

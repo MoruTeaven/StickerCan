@@ -4,8 +4,7 @@
  * 使用 apihz.cn 的搜狗表情包搜索 API。
  */
 
-const SearchSourceBase = require('./SearchSourceBase.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
 class SogouSearchSource extends SearchSourceBase {
   getId() {
     return 'sogou';

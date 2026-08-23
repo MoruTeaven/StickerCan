@@ -6,10 +6,7 @@
  * 回退到浏览器标准 fetch。
  */
 
-const HttpProvider = require('../core/interfaces/HttpProvider.js');
-const https = require('https');
-const http = require('http');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
 class UToolsHttpProvider extends HttpProvider {
   async fetchWithTimeout(url, options = {}, timeout = 30000) {
     const controller = new AbortController();

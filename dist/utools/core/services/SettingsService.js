@@ -5,9 +5,8 @@
  * 通过依赖注入的 StorageProvider 和 FileProvider 操作存储层。
  */
 
-const Settings = require('../models/Settings.js');
-const CryptoUtils = require('../utils/CryptoUtils.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
 class SettingsService {
   /**
    * @param {object} deps

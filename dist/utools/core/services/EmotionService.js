@@ -7,10 +7,9 @@
  * 不包含任何 DOM 操作，UI 由客户端的 UIManager 处理。
  */
 
-const Emotion = require('../models/Emotion.js');
-const CryptoUtils = require('../utils/CryptoUtils.js');
-const MimeUtils = require('../utils/MimeUtils.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
 class EmotionService {
   /**
    * @param {object} deps

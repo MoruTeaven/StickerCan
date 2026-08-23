@@ -6,12 +6,11 @@
  * 客户端 UI 层通过此服务发起搜索、加载更多。
  */
 
-const ApiHzSearchSource = require('../search/ApiHzSearchSource.js');
-const BaiduSearchSource = require('../search/BaiduSearchSource.js');
-const SogouSearchSource = require('../search/SogouSearchSource.js');
-const TangdouziSearchSource = require('../search/TangdouziSearchSource.js');
-const YujianSearchSource = require('../search/YujianSearchSource.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
+// [browser] 上述模块已通过 <script> 标签全局加载
 class SearchService {
   /**
    * @param {object} deps

@@ -60,36 +60,33 @@ function createApp(deps = {}) {
 }
 
 // 导出所有模块
-module.exports = {
-  createApp,
-
-  // 接口
-  StorageProvider: require('./interfaces/StorageProvider.js'),
-  ClipboardProvider: require('./interfaces/ClipboardProvider.js'),
-  FileProvider: require('./interfaces/FileProvider.js'),
-  HttpProvider: require('./interfaces/HttpProvider.js'),
-  NotificationProvider: require('./interfaces/NotificationProvider.js'),
-  SearchProvider: require('./interfaces/SearchProvider.js'),
-
-  // 模型
-  Emotion: require('./models/Emotion.js'),
-  Settings: require('./models/Settings.js'),
-
-  // 工具
-  CryptoUtils: require('./utils/CryptoUtils.js'),
-  MimeUtils: require('./utils/MimeUtils.js'),
-  HtmlUtils: require('./utils/HtmlUtils.js'),
-
-  // 搜索源
-  SearchSourceBase: require('./search/SearchSourceBase.js'),
-  ApiHzSearchSource: require('./search/ApiHzSearchSource.js'),
-  BaiduSearchSource: require('./search/BaiduSearchSource.js'),
-  SogouSearchSource: require('./search/SogouSearchSource.js'),
-  TangdouziSearchSource: require('./search/TangdouziSearchSource.js'),
-  YujianSearchSource: require('./search/YujianSearchSource.js'),
-
-  // 服务
-  SettingsService,
-  EmotionService,
-  SearchService,
-};
+// 在 Node.js 环境中使用 module.exports，在浏览器中暴露为全局变量
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    createApp,
+    StorageProvider: require('./interfaces/StorageProvider.js'),
+    ClipboardProvider: require('./interfaces/ClipboardProvider.js'),
+    FileProvider: require('./interfaces/FileProvider.js'),
+    HttpProvider: require('./interfaces/HttpProvider.js'),
+    NotificationProvider: require('./interfaces/NotificationProvider.js'),
+    SearchProvider: require('./interfaces/SearchProvider.js'),
+    Emotion: require('./models/Emotion.js'),
+    Settings: require('./models/Settings.js'),
+    CryptoUtils: require('./utils/CryptoUtils.js'),
+    MimeUtils: require('./utils/MimeUtils.js'),
+    HtmlUtils: require('./utils/HtmlUtils.js'),
+    SearchSourceBase: require('./search/SearchSourceBase.js'),
+    ApiHzSearchSource: require('./search/ApiHzSearchSource.js'),
+    BaiduSearchSource: require('./search/BaiduSearchSource.js'),
+    SogouSearchSource: require('./search/SogouSearchSource.js'),
+    TangdouziSearchSource: require('./search/TangdouziSearchSource.js'),
+    YujianSearchSource: require('./search/YujianSearchSource.js'),
+    SettingsService,
+    EmotionService,
+    SearchService,
+  };
+}
+// 浏览器环境：暴露 createApp 为全局变量
+if (typeof window !== 'undefined') {
+  window.createApp = createApp;
+}

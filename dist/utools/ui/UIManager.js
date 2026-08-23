@@ -5,8 +5,7 @@
  * 业务逻辑委托给 EmotionService / SettingsService / SearchService。
  */
 
-const HtmlUtils = require('../core/utils/HtmlUtils.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
 class UIManager {
   constructor(deps = {}) {
     this.emotionService = deps.emotionService;

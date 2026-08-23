@@ -7,9 +7,6 @@
  */
 
 const HttpProvider = require('../../../core/interfaces/HttpProvider.js');
-const https = require('https');
-const http = require('http');
-
 class UToolsHttpProvider extends HttpProvider {
   async fetchWithTimeout(url, options = {}, timeout = 30000) {
     const controller = new AbortController();

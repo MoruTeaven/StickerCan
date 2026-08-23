@@ -5,8 +5,7 @@
  * 使用 DOM 创建消息提示条。
  */
 
-const NotificationProvider = require('../core/interfaces/NotificationProvider.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
 class UToolsNotificationProvider extends NotificationProvider {
   constructor(deps = {}) {
     super();

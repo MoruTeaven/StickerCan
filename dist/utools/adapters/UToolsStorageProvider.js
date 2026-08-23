@@ -4,8 +4,7 @@
  * 实现 StorageProvider 接口，封装 uTools 的 db / dbStorage API。
  */
 
-const StorageProvider = require('../core/interfaces/StorageProvider.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
 class UToolsStorageProvider extends StorageProvider {
   getNativeId() {
     return utools.getNativeId();

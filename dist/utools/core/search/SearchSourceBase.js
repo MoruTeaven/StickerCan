@@ -7,8 +7,7 @@
  * 继承自 SearchProvider 接口。
  */
 
-const SearchProvider = require('../interfaces/SearchProvider.js');
-
+// [browser] 上述模块已通过 <script> 标签全局加载
 class SearchSourceBase extends SearchProvider {
   /**
    * @param {object} deps - 依赖注入
