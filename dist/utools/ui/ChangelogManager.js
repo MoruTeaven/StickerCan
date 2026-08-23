@@ -9,7 +9,7 @@ class ChangelogManager {
     this.versions = [
       {
         version: '1.1.1',
-        date: '2026-06-15',
+        date: '2026-08-23',
         changes: {
           added: [],
           adjusted: [],

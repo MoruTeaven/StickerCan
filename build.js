@@ -98,49 +98,55 @@ function listFiles(dir, prefix = '') {
 /**
  * 需要在浏览器中按顺序加载的前端 JS 文件列表（不含 preload.js）。
  * 顺序按照依赖关系拓扑排序：被依赖的文件先加载。
+ * 适配器部分根据客户端名称动态生成（如 UTools / ZTools）。
  */
-const FRONTEND_SCRIPT_ORDER = [
-  // Layer 0: 接口和模型（无依赖）
-  'core/interfaces/StorageProvider.js',
-  'core/interfaces/ClipboardProvider.js',
-  'core/interfaces/FileProvider.js',
-  'core/interfaces/HttpProvider.js',
-  'core/interfaces/NotificationProvider.js',
-  'core/interfaces/SearchProvider.js',
-  'core/models/Emotion.js',
-  'core/models/Settings.js',
-  'core/utils/CryptoUtils.js',
-  'core/utils/MimeUtils.js',
-  'core/utils/HtmlUtils.js',
+function getFrontendScriptOrder(clientName) {
+  // 根据客户端名称推断适配器前缀（如 utools → UTools, ztools → ZTools）
+  // 规则：首字母大写 + "Tools"（因为 tools 部分的 T 也需要大写）
+  const prefix = clientName.charAt(0).toUpperCase() + 'Tools';
+  return [
+    // Layer 0: 接口和模型（无依赖）
+    'core/interfaces/StorageProvider.js',
+    'core/interfaces/ClipboardProvider.js',
+    'core/interfaces/FileProvider.js',
+    'core/interfaces/HttpProvider.js',
+    'core/interfaces/NotificationProvider.js',
+    'core/interfaces/SearchProvider.js',
+    'core/models/Emotion.js',
+    'core/models/Settings.js',
+    'core/utils/CryptoUtils.js',
+    'core/utils/MimeUtils.js',
+    'core/utils/HtmlUtils.js',
 
-  // Layer 1: 基类和服务（依赖接口/模型/工具）
-  'core/search/SearchSourceBase.js',
-  'core/services/SettingsService.js',
-  'core/services/EmotionService.js',
+    // Layer 1: 基类和服务（依赖接口/模型/工具）
+    'core/search/SearchSourceBase.js',
+    'core/services/SettingsService.js',
+    'core/services/EmotionService.js',
 
-  // Layer 2: 搜索源和搜索服务（依赖基类）
-  'core/search/ApiHzSearchSource.js',
-  'core/search/BaiduSearchSource.js',
-  'core/search/SogouSearchSource.js',
-  'core/search/TangdouziSearchSource.js',
-  'core/search/YujianSearchSource.js',
-  'core/services/SearchService.js',
+    // Layer 2: 搜索源和搜索服务（依赖基类）
+    'core/search/ApiHzSearchSource.js',
+    'core/search/BaiduSearchSource.js',
+    'core/search/SogouSearchSource.js',
+    'core/search/TangdouziSearchSource.js',
+    'core/search/YujianSearchSource.js',
+    'core/services/SearchService.js',
 
-  // Layer 3: 核心入口（聚合所有核心模块）
-  'core/core.js',
+    // Layer 3: 核心入口（聚合所有核心模块）
+    'core/core.js',
 
-  // Layer 4: 适配器（依赖接口）
-  'adapters/UToolsStorageProvider.js',
-  'adapters/UToolsClipboardProvider.js',
-  'adapters/UToolsFileProvider.js',
-  'adapters/UToolsHttpProvider.js',
-  'adapters/UToolsNotificationProvider.js',
+    // Layer 4: 适配器（依赖接口）- 根据客户端名称动态生成
+    `adapters/${prefix}StorageProvider.js`,
+    `adapters/${prefix}ClipboardProvider.js`,
+    `adapters/${prefix}FileProvider.js`,
+    `adapters/${prefix}HttpProvider.js`,
+    `adapters/${prefix}NotificationProvider.js`,
 
-  // Layer 5: UI 管理器
-  'ui/ThemeManager.js',
-  'ui/ChangelogManager.js',
-  'ui/UIManager.js',
-];
+    // Layer 5: UI 管理器
+    'ui/ThemeManager.js',
+    'ui/ChangelogManager.js',
+    'ui/UIManager.js',
+  ];
+}
 
 /**
  * 从 require 调用中提取模块名（取文件名不含扩展名，首字母大写作为全局类名）
@@ -229,8 +235,9 @@ if (typeof window !== 'undefined') {
 /**
  * 递归处理所有前端 JS 文件（排除 preload.js）
  */
-function processFrontendJs(clientDir) {
-  for (const relPath of FRONTEND_SCRIPT_ORDER) {
+function processFrontendJs(clientDir, clientName) {
+  const scriptOrder = getFrontendScriptOrder(clientName);
+  for (const relPath of scriptOrder) {
     const fullPath = path.join(clientDir, relPath);
     stripRequireCalls(fullPath);
   }
@@ -242,14 +249,15 @@ function processFrontendJs(clientDir) {
  * 修改 index.html：移除旧的 <script src="script.js">，
  * 替换为按依赖顺序加载所有前端 JS 文件的 <script> 标签
  */
-function injectScriptTags(clientDir) {
+function injectScriptTags(clientDir, clientName) {
   const htmlPath = path.join(clientDir, 'index.html');
   if (!fs.existsSync(htmlPath)) return;
 
   let html = fs.readFileSync(htmlPath, 'utf-8');
 
   // 构建 <script> 标签
-  const scriptTags = FRONTEND_SCRIPT_ORDER
+  const scriptOrder = getFrontendScriptOrder(clientName);
+  const scriptTags = scriptOrder
     .map(p => `    <script src="${p}"></script>`)
     .join('\n');
 
@@ -338,8 +346,8 @@ function buildClient(clientName) {
 
   // 4. 浏览器兼容性后处理
   console.log('  执行浏览器兼容性处理...');
-  processFrontendJs(distClient);
-  injectScriptTags(distClient);
+  processFrontendJs(distClient, clientName);
+  injectScriptTags(distClient, clientName);
   fixMaterialIconsCss(distClient);
 
   // 5. 列出产物
