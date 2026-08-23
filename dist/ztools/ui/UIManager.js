@@ -283,12 +283,34 @@ class UIManager {
         ? this.emotionService.findPairedEmotion(emotion, 'local')
         : this.emotionService.findPairedEmotion(emotion, 'cloud');
       if (hp) {
-        cb.innerHTML = '<i class="mdi mdi-check-circle"></i><span>' + (emotion.storageType === 'cloud' ? '已存在本地' : '已存在云端') + '</span>';
-        cb.disabled = true;
+        cb.innerHTML = '<i class="mdi mdi-' + (emotion.storageType === 'cloud' ? 'folder-download' : 'cloud-upload') + '"></i><span>' + (emotion.storageType === 'cloud' ? '保存到本地' : '上传到云端') + '</span>';
+        cb.disabled = false;
       } else {
         cb.innerHTML = '<i class="mdi mdi-' + (emotion.storageType === 'cloud' ? 'folder-download' : 'cloud-upload') + '"></i><span>' + (emotion.storageType === 'cloud' ? '保存到本地' : '上传到云端') + '</span>';
         cb.disabled = false;
       }
+    }
+
+    // 删除下拉菜单：根据是否有配对动态设置选项
+    const paired = emotion.storageType === 'cloud'
+      ? this.emotionService.findPairedEmotion(emotion, 'local')
+      : this.emotionService.findPairedEmotion(emotion, 'cloud');
+    const deleteCurrentLabel = document.getElementById('deleteCurrentLabel');
+    const deletePairedBtn = document.getElementById('deletePairedBtn');
+    const deleteBothBtn = document.getElementById('deleteBothBtn');
+    const deletePairedLabel = document.getElementById('deletePairedLabel');
+    if (deleteCurrentLabel) {
+      deleteCurrentLabel.textContent = emotion.storageType === 'cloud' ? '仅删除云端' : '仅删除本地';
+    }
+    if (paired) {
+      if (deletePairedBtn) deletePairedBtn.style.display = 'flex';
+      if (deleteBothBtn) deleteBothBtn.style.display = 'flex';
+      if (deletePairedLabel) {
+        deletePairedLabel.textContent = emotion.storageType === 'cloud' ? '仅删除本地' : '仅删除云端';
+      }
+    } else {
+      if (deletePairedBtn) deletePairedBtn.style.display = 'none';
+      if (deleteBothBtn) deleteBothBtn.style.display = 'none';
     }
     const tl = document.getElementById('tagList');
     const te = document.getElementById('tagEditor');
@@ -368,11 +390,49 @@ class UIManager {
     catch (e) { this.notification.showMessage(e.message, 'error'); }
   }
 
-  async deleteCurrentEmotion() {
+  toggleDeleteDropdown() {
+    const dd = document.querySelector('.delete-dropdown');
+    if (dd) dd.classList.toggle('open');
+  }
+
+  closeDeleteDropdown() {
+    const dd = document.querySelector('.delete-dropdown');
+    if (dd) dd.classList.remove('open');
+  }
+
+  async deleteCurrentEmotion(action) {
     if (!this.currentEmotion) return;
-    if (confirm('确定要删除这个表情包吗？')) {
-      const dl = this.settingsService.settings.deleteLocalFile;
-      await this.emotionService.deleteEmotion(this.currentEmotion, dl);
+    this.closeDeleteDropdown();
+
+    const emotion = this.currentEmotion;
+    const dl = this.settingsService.settings.deleteLocalFile;
+
+    if (action === 'current') {
+      const label = emotion.storageType === 'cloud' ? '云端' : '本地';
+      if (!confirm('确定要删除' + label + '的表情包吗？')) return;
+      await this.emotionService.deleteEmotion(emotion, dl);
+      this.renderAllViews();
+      this.hideModal('emotionModal');
+      this.notification.showMessage('已删除' + label + '表情包', 'success');
+    } else if (action === 'paired') {
+      const targetType = emotion.storageType === 'cloud' ? 'local' : 'cloud';
+      const label = targetType === 'cloud' ? '云端' : '本地';
+      if (!confirm('确定要删除' + label + '的表情包吗？')) return;
+      await this.emotionService.deletePairedEmotion(emotion, targetType, dl);
+      this.renderAllViews();
+      this.hideModal('emotionModal');
+      this.notification.showMessage('已删除' + label + '表情包', 'success');
+    } else if (action === 'both') {
+      if (!confirm('确定要删除本地和云端的表情包吗？')) return;
+      const targetType = emotion.storageType === 'cloud' ? 'local' : 'cloud';
+      await this.emotionService.deletePairedEmotion(emotion, targetType, dl);
+      await this.emotionService.deleteEmotion(emotion, dl);
+      this.renderAllViews();
+      this.hideModal('emotionModal');
+      this.notification.showMessage('表情包已全部删除', 'success');
+    } else {
+      if (!confirm('确定要删除这个表情包吗？')) return;
+      await this.emotionService.deleteEmotion(emotion, dl);
       this.renderAllViews();
       this.hideModal('emotionModal');
       this.notification.showMessage('表情包已删除', 'success');
@@ -384,9 +444,9 @@ class UIManager {
     try {
       this.notification.showMessage('正在转换...', 'info');
       const wasCloud = this.currentEmotion.storageType === 'cloud';
-      await this.emotionService.convertStorage(this.currentEmotion, (m) => this.notification.showMessage(m, 'info'));
+      const newEmotion = await this.emotionService.convertStorage(this.currentEmotion, (m) => this.notification.showMessage(m, 'info'));
       this.renderAllViews();
-      this.hideModal('emotionModal');
+      this.showEmotionDetail(newEmotion);
       this.notification.showMessage(wasCloud ? '表情包已保存到本地' : '表情包已上传到云端', 'success');
     } catch (e) { this.notification.showMessage('转换失败: ' + e.message, 'error'); }
   }
@@ -690,7 +750,11 @@ class UIManager {
     const etb = document.getElementById('editTagsBtn');
     if (etb) etb.addEventListener('click', () => this.toggleEditMode());
     const db = document.getElementById('deleteBtn');
-    if (db) db.addEventListener('click', () => this.deleteCurrentEmotion());
+    if (db) db.addEventListener('click', (e) => { e.stopPropagation(); this.toggleDeleteDropdown(); });
+    document.querySelectorAll('.delete-option').forEach(opt => {
+      opt.addEventListener('click', (e) => { e.stopPropagation(); this.deleteCurrentEmotion(opt.dataset.action); });
+    });
+    document.addEventListener('click', () => this.closeDeleteDropdown());
     const cvb = document.getElementById('convertBtn');
     if (cvb) cvb.addEventListener('click', () => this.convertCurrentEmotionStorage());
     const ti = document.getElementById('tagInput');

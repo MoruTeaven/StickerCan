@@ -592,10 +592,27 @@
                     <i class="mdi mdi-tag"></i>
                     <span>编辑标签</span>
                 </button>
-                <button id="deleteBtn" class="btn btn-danger">
-                    <i class="mdi mdi-delete"></i>
-                    <span>删除</span>
-                </button>
+                <div class="delete-dropdown">
+                    <button id="deleteBtn" class="btn btn-danger">
+                        <i class="mdi mdi-delete"></i>
+                        <span>删除</span>
+                        <i class="mdi mdi-chevron-down delete-caret"></i>
+                    </button>
+                    <div id="deleteDropdownMenu" class="delete-dropdown-menu">
+                        <button class="delete-option" data-action="current">
+                            <i class="mdi mdi-delete"></i>
+                            <span id="deleteCurrentLabel">删除当前</span>
+                        </button>
+                        <button class="delete-option" data-action="paired" id="deletePairedBtn" style="display:none;">
+                            <i class="mdi mdi-delete-empty"></i>
+                            <span id="deletePairedLabel">删除配对</span>
+                        </button>
+                        <button class="delete-option" data-action="both" id="deleteBothBtn" style="display:none;">
+                            <i class="mdi mdi-delete-forever"></i>
+                            <span>全部删除</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

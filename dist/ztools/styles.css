@@ -1226,6 +1226,74 @@ body {
     justify-content: center;
 }
 
+/* ── 删除下拉菜单 ── */
+.delete-dropdown {
+    position: relative;
+    flex: 1;
+    display: flex;
+}
+
+.delete-dropdown .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+.delete-caret {
+    margin-left: 4px;
+    font-size: 18px;
+    transition: transform 0.2s;
+}
+
+.delete-dropdown.open .delete-caret {
+    transform: rotate(180deg);
+}
+
+.delete-dropdown-menu {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.delete-dropdown.open .delete-dropdown-menu {
+    display: block;
+}
+
+.delete-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+}
+
+.delete-option:hover {
+    background: var(--bg-tertiary);
+}
+
+.delete-option .mdi {
+    font-size: 18px;
+    color: var(--danger-color, #e53935);
+}
+
+.delete-option:last-child {
+    border-top: 1px solid var(--border-color);
+}
+
 .emotion-detail {
     display: flex;
     gap: 28px;
