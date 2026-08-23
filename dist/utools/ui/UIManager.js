@@ -755,6 +755,31 @@ class UIManager {
         else window.open(url, '_blank');
       });
     });
+
+    // 图片放大遮罩
+    document.querySelectorAll('.zoomable-image').forEach(img => {
+      img.addEventListener('click', () => this._showImageZoom(img.src));
+    });
+    const zoomOverlay = document.getElementById('imageZoomOverlay');
+    if (zoomOverlay) {
+      zoomOverlay.addEventListener('click', () => this._hideImageZoom());
+    }
+  }
+
+  _showImageZoom(src) {
+    const overlay = document.getElementById('imageZoomOverlay');
+    const img = document.getElementById('zoomedImage');
+    if (overlay && img) {
+      img.src = src;
+      overlay.classList.add('active');
+    }
+  }
+
+  _hideImageZoom() {
+    const overlay = document.getElementById('imageZoomOverlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+    }
   }
 
   async _selectLocalFolder() {

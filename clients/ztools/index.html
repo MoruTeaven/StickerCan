@@ -564,14 +564,14 @@
                                 <i class="mdi mdi-folder"></i>
                                 <span>本地</span>
                             </div>
-                            <img id="modalLocalImage" src="" alt="本地图片">
+                            <img id="modalLocalImage" src="" alt="本地图片" class="zoomable-image">
                         </div>
                         <div class="emotion-image-wrapper cloud-wrapper" id="cloudImageWrapper" style="display: none;">
                             <div class="image-label">
                                 <i class="mdi mdi-cloud"></i>
                                 <span>云端</span>
                             </div>
-                            <img id="modalCloudImage" src="" alt="云端图片">
+                            <img id="modalCloudImage" src="" alt="云端图片" class="zoomable-image">
                         </div>
                     </div>
                     <div class="emotion-info">
@@ -693,6 +693,11 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- 图片放大遮罩层 -->
+    <div id="imageZoomOverlay" class="image-zoom-overlay">
+        <img id="zoomedImage" src="" alt="放大图片">
     </div>
 
     <script src="script.js"></script>
