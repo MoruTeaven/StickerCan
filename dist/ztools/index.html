@@ -61,44 +61,30 @@
         <main class="main-content">
             <!-- 首页视图 -->
             <div id="homeView" class="view active">
-                <header class="content-header">
-                    <div class="search-box">
-                        <input
-                            type="text"
-                            id="searchInput"
-                            placeholder="搜索表情包..."
-                            autocomplete="off"
-                        >
-                    </div>
-                    <div class="header-actions">
-                        <button id="searchBtn" class="btn btn-secondary">
-                            <i class="mdi mdi-magnify"></i> 搜索
+                <!-- 搜索选项卡 + 添加按钮 -->
+                <div class="search-tabs-row">
+                    <div class="search-tabs">
+                        <button class="tab-btn active" data-tab="mine">
+                            <span>我的</span>
                         </button>
-                        <button id="addBtn" class="btn btn-primary">
-                            <i class="mdi mdi-plus"></i> 添加表情
+                        <button class="tab-btn" data-tab="yujian">
+                            <span>遇见</span>
+                        </button>
+                        <button class="tab-btn" data-tab="tangdouzi">
+                            <span>糖豆子</span>
+                        </button>
+                        <button class="tab-btn" data-tab="baidu">
+                            <span>百度</span>
+                        </button>
+                        <button class="tab-btn" data-tab="sogou">
+                            <span>搜狗</span>
+                        </button>
+                        <button class="tab-btn" data-tab="apihz">
+                            <span>接口盒子</span>
                         </button>
                     </div>
-                </header>
-
-                <!-- 搜索选项卡 -->
-                <div class="search-tabs">
-                    <button class="tab-btn active" data-tab="mine">
-                        我的
-                    </button>
-                    <button class="tab-btn" data-tab="yujian">
-                        遇见
-                    </button>
-                    <button class="tab-btn" data-tab="tangdouzi">
-                        糖豆子
-                    </button>
-                    <button class="tab-btn" data-tab="baidu">
-                        百度
-                    </button>
-                    <button class="tab-btn" data-tab="sogou">
-                        搜狗
-                    </button>
-                    <button class="tab-btn" data-tab="apihz">
-                        接口盒子
+                    <button id="addBtn" class="btn btn-primary btn-icon-only" title="添加表情">
+                        <i class="mdi mdi-plus"></i>
                     </button>
                 </div>
 
@@ -488,7 +474,7 @@
                                         <img src="logo.png" alt="表情罐头" class="about-logo-img">
                                     </div>
                                     <h2>表情罐头</h2>
-                                    <p class="about-version">版本 1.0.0</p>
+                                    <p class="about-version">版本 1.2.0</p>
                                     <p class="about-desc">一款简洁高效的表情包管理工具，支持本地和云端混合存储</p>
                                 </div>
 

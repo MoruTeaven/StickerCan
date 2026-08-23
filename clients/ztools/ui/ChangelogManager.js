@@ -8,6 +8,23 @@ class ChangelogManager {
   constructor() {
     this.versions = [
       {
+        version: '1.2.0',
+        date: '2026-08-23',
+        changes: {
+          added: [],
+          adjusted: [
+            '将搜索框改为平台原生子输入框，提升搜索体验',
+            '重新设计搜索选项卡样式，采用药丸式设计更紧凑美观',
+            '将搜索选项卡与添加按钮合并为一行，节省页面空间'
+          ],
+          fixed: [],
+          improved: [],
+          removed: [
+            '移除了首页自定义搜索框及相关样式，改用平台原生搜索'
+          ]
+        }
+      },
+      {
         version: '1.1.2',
         date: '2026-08-23',
         changes: {

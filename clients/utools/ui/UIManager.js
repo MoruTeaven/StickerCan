@@ -22,6 +22,27 @@ class UIManager {
     this.sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
     this.loadingCount = 0;
     this._scrollBound = false;
+    this.searchKeyword = '';
+  }
+
+  // ─────────────── uTools 子输入框 ───────────────
+
+  setupSubInput() {
+    if (typeof utools !== 'undefined' && utools.setSubInput) {
+      utools.setSubInput((data) => {
+        this.searchKeyword = data.text.trim();
+        if (this.currentTab === 'mine') {
+          this.searchEmotions(this.searchKeyword);
+        } else {
+          if (this.searchKeyword) {
+            this.handleExternalSearch(this.searchKeyword);
+          } else {
+            const er = document.getElementById('externalResults');
+            if (er) { er.style.display = 'block'; er.innerHTML = '<p class="hint-text">请输入关键词进行搜索</p>'; }
+          }
+        }
+      }, '搜索表情包...');
+    }
   }
 
   // ─────────────── 加载状态 ───────────────
@@ -96,11 +117,10 @@ class UIManager {
     if (tb) tb.classList.add('active');
     this.clearContent();
     if (tabName === 'mine') {
-      this.renderEmotions(this.searchService.searchLocal(''));
+      this.renderEmotions(this.searchService.searchLocal(this.searchKeyword));
     } else {
       this.searchService.setActiveSource(tabName);
-      const keyword = document.getElementById('searchInput').value.trim();
-      if (keyword) { this.handleExternalSearch(keyword); }
+      if (this.searchKeyword) { this.handleExternalSearch(this.searchKeyword); }
       else {
         const er = document.getElementById('externalResults');
         er.style.display = 'block';
@@ -449,9 +469,8 @@ class UIManager {
   // ─────────────── 搜索 ───────────────
 
   handleSearch() {
-    const keyword = document.getElementById('searchInput').value.trim();
-    if (this.currentTab === 'mine') { this.renderEmotions(this.searchService.searchLocal(keyword)); }
-    else { this.handleExternalSearch(keyword); }
+    if (this.currentTab === 'mine') { this.renderEmotions(this.searchService.searchLocal(this.searchKeyword)); }
+    else { this.handleExternalSearch(this.searchKeyword); }
   }
 
   async handleExternalSearch(keyword) {
@@ -666,15 +685,6 @@ class UIManager {
     document.querySelectorAll('input[name="theme"]').forEach(radio => {
       radio.addEventListener('change', (e) => { this.themeManager.setUserPreference(e.target.value); });
     });
-
-    const si = document.getElementById('searchInput');
-    if (si) {
-      si.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.handleSearch(); });
-      si.addEventListener('input', (e) => { if (this.currentTab === 'mine') this.searchEmotions(e.target.value); });
-    }
-
-    const sb = document.getElementById('searchBtn');
-    if (sb) sb.addEventListener('click', () => this.handleSearch());
 
     const ab = document.getElementById('addBtn');
     if (ab) ab.addEventListener('click', () => this.showModal('addModal'));
