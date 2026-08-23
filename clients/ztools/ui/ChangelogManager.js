@@ -8,6 +8,19 @@ class ChangelogManager {
   constructor() {
     this.versions = [
       {
+        version: '1.1.2',
+        date: '2026-08-23',
+        changes: {
+          added: [
+            '增加了表情详情中点击图片放大查看的功能'
+          ],
+          adjusted: [],
+          fixed: [],
+          improved: [],
+          removed: []
+        }
+      },
+      {
         version: '1.1.1',
         date: '2026-08-23',
         changes: {
