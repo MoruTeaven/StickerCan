@@ -420,7 +420,11 @@ class UIManager {
 
   _bindExternalCardEvents(container) {
     container.querySelectorAll('.result-item').forEach(item => {
-      item.querySelector('img')?.addEventListener('click', () => this.copyFromUrl(item.dataset.url));
+      const copyBtn = item.querySelector('.copy-btn');
+      if (copyBtn && !copyBtn.dataset.bound) {
+        copyBtn.dataset.bound = '1';
+        copyBtn.addEventListener('click', (e) => { e.stopPropagation(); this.copyFromUrl(item.dataset.url); });
+      }
     });
   }
 
@@ -575,7 +579,7 @@ class UIManager {
     const er = document.getElementById('externalResults');
     er.style.display = 'grid';
     const fb = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iIzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzc3NyIgPkltYWdlPC90ZXh0Pjwvc3ZnPg==';
-    er.innerHTML = images.map(u => `<div class="result-item" data-url="${u}"><img src="${u}" alt="表情包" onerror="this.src='${fb}'"><div class="search-result-buttons"><button class="add-btn local" onclick="window._emotionApp.addFromUrlLocal('${u}', '${keyword}')"><i class="mdi mdi-folder"></i> 本地</button><button class="add-btn cloud" onclick="window._emotionApp.addFromUrlCloud('${u}', '${keyword}')"><i class="mdi mdi-cloud"></i> 云端</button><button class="add-btn copy" onclick="window._emotionApp.copyFromUrl('${u}')"><i class="mdi mdi-content-copy"></i> 复制</button></div></div>`).join('');
+    er.innerHTML = images.map(u => `<div class="result-item" data-url="${u}"><div class="result-media"><img src="${u}" alt="表情包" onerror="this.src='${fb}'"><div class="copy-overlay"><button class="copy-btn" onclick="window._emotionApp.copyFromUrl('${u}')"><i class="mdi mdi-content-copy"></i><span>复制</span></button></div></div><div class="search-result-buttons"><button class="add-btn local" onclick="window._emotionApp.addFromUrlLocal('${u}', '${keyword}')"><i class="mdi mdi-folder"></i> 本地</button><button class="add-btn cloud" onclick="window._emotionApp.addFromUrlCloud('${u}', '${keyword}')"><i class="mdi mdi-cloud"></i> 云端</button></div></div>`).join('');
     this._bindExternalCardEvents(er);
     if (hasMore) { er.innerHTML += '<div class="load-more-container"><button class="load-more-btn" onclick="window._emotionApp.loadMoreExternal()"><i class="mdi mdi-chevron-down"></i> 继续</button></div>'; }
   }
@@ -598,7 +602,7 @@ class UIManager {
     newImages.forEach(u => {
       const d = document.createElement('div');
       d.className = 'result-item'; d.dataset.url = u;
-      d.innerHTML = `<img src="${u}" alt="表情包" onerror="this.src='${fb}'"><div class="search-result-buttons"><button class="add-btn local" onclick="window._emotionApp.addFromUrlLocal('${u}', '${keyword}')"><i class="mdi mdi-folder"></i> 本地</button><button class="add-btn cloud" onclick="window._emotionApp.addFromUrlCloud('${u}', '${keyword}')"><i class="mdi mdi-cloud"></i> 云端</button><button class="add-btn copy" onclick="window._emotionApp.copyFromUrl('${u}')"><i class="mdi mdi-content-copy"></i> 复制</button></div>`;
+      d.innerHTML = `<div class="result-media"><img src="${u}" alt="表情包" onerror="this.src='${fb}'"><div class="copy-overlay"><button class="copy-btn" onclick="window._emotionApp.copyFromUrl('${u}')"><i class="mdi mdi-content-copy"></i><span>复制</span></button></div></div><div class="search-result-buttons"><button class="add-btn local" onclick="window._emotionApp.addFromUrlLocal('${u}', '${keyword}')"><i class="mdi mdi-folder"></i> 本地</button><button class="add-btn cloud" onclick="window._emotionApp.addFromUrlCloud('${u}', '${keyword}')"><i class="mdi mdi-cloud"></i> 云端</button></div>`;
       er.appendChild(d);
     });
     this._bindExternalCardEvents(er);

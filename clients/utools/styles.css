@@ -619,11 +619,65 @@ body {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
+#externalResults .result-item .result-media {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    overflow: hidden;
+}
+
 #externalResults .result-item img {
     width: 100%;
     height: 150px;
     object-fit: cover;
     display: block;
+}
+
+#externalResults .result-item .copy-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+#externalResults .result-item:hover .copy-overlay {
+    opacity: 1;
+}
+
+#externalResults .result-item .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--accent-color);
+    color: var(--inverse-text);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#externalResults .result-item .copy-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+#externalResults .result-item .copy-btn:active {
+    transform: scale(0.98);
+}
+
+#externalResults .result-item .copy-btn .mdi {
+    font-size: 20px;
 }
 
 #externalResults .result-item .search-result-buttons {
@@ -658,12 +712,6 @@ body {
 #externalResults .result-item .add-btn.cloud {
     background: var(--accent-color);
     color: var(--inverse-text);
-}
-
-#externalResults .result-item .add-btn.copy {
-    background: var(--bg-tertiary);
-    color: var(--accent-color);
-    border: 1px solid var(--accent-color);
 }
 
 #externalResults .result-item .add-btn:hover {
