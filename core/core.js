@@ -79,7 +79,7 @@ if (typeof module !== 'undefined' && module.exports) {
     ApiHzSearchSource: require('./search/ApiHzSearchSource.js'),
     BaiduSearchSource: require('./search/BaiduSearchSource.js'),
     SogouSearchSource: require('./search/SogouSearchSource.js'),
-    TangdouziSearchSource: require('./search/TangdouziSearchSource.js'),
+    QQSearchSource: require('./search/QQSearchSource.js'),
     YujianSearchSource: require('./search/YujianSearchSource.js'),
     SettingsService,
     EmotionService,

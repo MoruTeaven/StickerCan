@@ -126,8 +126,8 @@ function getFrontendScriptOrder(clientName) {
     // Layer 2: 搜索源和搜索服务（依赖基类）
     'core/search/ApiHzSearchSource.js',
     'core/search/BaiduSearchSource.js',
+    'core/search/QQSearchSource.js',
     'core/search/SogouSearchSource.js',
-    'core/search/TangdouziSearchSource.js',
     'core/search/YujianSearchSource.js',
     'core/services/SearchService.js',
 

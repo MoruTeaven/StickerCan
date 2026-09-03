@@ -36,7 +36,7 @@ class SearchService {
   _registerDefaultSources() {
     const deps = { httpProvider: this.http };
     this.registerSource(new YujianSearchSource(deps));
-    this.registerSource(new TangdouziSearchSource(deps));
+    this.registerSource(new QQSearchSource(deps));
     this.registerSource(new BaiduSearchSource(deps));
     this.registerSource(new SogouSearchSource(deps));
     this.registerSource(new ApiHzSearchSource(deps));

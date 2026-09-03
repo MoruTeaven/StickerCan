@@ -9,7 +9,7 @@
 const ApiHzSearchSource = require('../search/ApiHzSearchSource.js');
 const BaiduSearchSource = require('../search/BaiduSearchSource.js');
 const SogouSearchSource = require('../search/SogouSearchSource.js');
-const TangdouziSearchSource = require('../search/TangdouziSearchSource.js');
+const QQSearchSource = require('../search/QQSearchSource.js');
 const YujianSearchSource = require('../search/YujianSearchSource.js');
 
 class SearchService {
@@ -37,7 +37,7 @@ class SearchService {
   _registerDefaultSources() {
     const deps = { httpProvider: this.http };
     this.registerSource(new YujianSearchSource(deps));
-    this.registerSource(new TangdouziSearchSource(deps));
+    this.registerSource(new QQSearchSource(deps));
     this.registerSource(new BaiduSearchSource(deps));
     this.registerSource(new SogouSearchSource(deps));
     this.registerSource(new ApiHzSearchSource(deps));

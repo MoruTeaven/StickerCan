@@ -8,6 +8,21 @@ class ChangelogManager {
   constructor() {
     this.versions = [
       {
+        version: '1.2.1',
+        date: '2026-09-03',
+        changes: {
+          added: [
+            '新增了"QQ"表情包搜索接口，支持分页加载'
+          ],
+          adjusted: [],
+          fixed: [],
+          improved: [],
+          removed: [
+            '移除了已失效的"糖豆子"表情包搜索接口'
+          ]
+        }
+      },
+      {
         version: '1.2.0',
         date: '2026-08-23',
         changes: {
