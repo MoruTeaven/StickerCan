@@ -544,32 +544,67 @@
             </div>
             <div class="modal-body">
                 <div class="emotion-detail">
-                    <div class="emotion-images-container">
-                        <div class="emotion-image-wrapper local-wrapper" id="localImageWrapper" style="display: none;">
-                            <div class="image-label">
-                                <i class="mdi mdi-folder"></i>
-                                <span>本地</span>
-                            </div>
-                            <img id="modalLocalImage" src="" alt="本地图片" class="zoomable-image">
+                    <div class="detail-preview">
+                        <div class="preview-stage">
+                            <img id="modalLocalImage" src="" alt="本地图片" class="zoomable-image detail-image" data-storage="local">
+                            <img id="modalCloudImage" src="" alt="云端图片" class="zoomable-image detail-image" data-storage="cloud">
                         </div>
-                        <div class="emotion-image-wrapper cloud-wrapper" id="cloudImageWrapper" style="display: none;">
-                            <div class="image-label">
-                                <i class="mdi mdi-cloud"></i>
+                        <div class="preview-switch" id="previewSwitch">
+                            <button type="button" class="preview-switch-btn" data-storage="local">
+                                <i class="mdi mdi-folder-outline"></i>
+                                <span>本地</span>
+                            </button>
+                            <button type="button" class="preview-switch-btn" data-storage="cloud">
+                                <i class="mdi mdi-cloud-outline"></i>
                                 <span>云端</span>
-                            </div>
-                            <img id="modalCloudImage" src="" alt="云端图片" class="zoomable-image">
+                            </button>
                         </div>
                     </div>
-                    <div class="emotion-info">
-                        <div class="info-section">
-                            <div class="section-title">存储位置</div>
+                    <div class="detail-info">
+                        <div class="info-card">
+                            <div class="info-card-title">
+                                <i class="mdi mdi-database-outline"></i>
+                                <span>存储位置</span>
+                            </div>
                             <div class="storage-badge" id="storageBadge">
                                 <i class="badge-icon mdi"></i>
                                 <span class="badge-text"></span>
                             </div>
                         </div>
-                        <div class="info-section">
-                            <div class="section-title">标签管理</div>
+                        <div class="info-card">
+                            <div class="info-card-title">
+                                <i class="mdi mdi-information-outline"></i>
+                                <span>基本信息</span>
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-row">
+                                    <span class="info-key">添加时间</span>
+                                    <span class="info-value" id="detailCreatedAt">-</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-key">更新时间</span>
+                                    <span class="info-value" id="detailUpdatedAt">-</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-key">配对状态</span>
+                                    <span class="info-value" id="detailPairStatus">-</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-key">标识 ID</span>
+                                    <span class="info-value info-value-mono" id="detailId">-</span>
+                                </div>
+                            </div>
+                            <div class="info-row info-row-block">
+                                <span class="info-key">图片地址</span>
+                                <span class="info-value info-value-path" id="detailPath">-</span>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-title">
+                                <i class="mdi mdi-tag-outline"></i>
+                                <span>标签</span>
+                                <span class="info-count" id="detailTagCount">0</span>
+                            </div>
                             <div id="tagList" class="tag-list"></div>
                             <div id="tagEditor" class="tag-editor" style="display: none;">
                                 <div id="tagInputContainer" class="tag-input-container"></div>

@@ -122,6 +122,7 @@ function getFrontendScriptOrder(clientName) {
     'core/search/SearchSourceBase.js',
     'core/services/SettingsService.js',
     'core/services/EmotionService.js',
+    'core/services/SearchCache.js',
 
     // Layer 2: 搜索源和搜索服务（依赖基类）
     'core/search/ApiHzSearchSource.js',

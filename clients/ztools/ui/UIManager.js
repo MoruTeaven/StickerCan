@@ -253,74 +253,124 @@ class UIManager {
 
   showEmotionDetail(emotion) {
     this.currentEmotion = emotion;
-    const lw = document.getElementById('localImageWrapper');
-    const cw = document.getElementById('cloudImageWrapper');
-    const li = document.getElementById('modalLocalImage');
-    const ci = document.getElementById('modalCloudImage');
-    if (lw) lw.style.display = 'none';
-    if (cw) cw.style.display = 'none';
-    if (emotion.storageType === 'cloud') {
-      if (ci) ci.src = emotion.url;
-      if (cw) cw.style.display = 'block';
-      const p = this.emotionService.findPairedEmotion(emotion, 'local');
-      if (p) { if (li) li.src = p.url; if (lw) lw.style.display = 'block'; }
-    } else {
-      if (li) li.src = emotion.url;
-      if (lw) lw.style.display = 'block';
-      const p = this.emotionService.findPairedEmotion(emotion, 'cloud');
-      if (p) { if (ci) ci.src = p.url; if (cw) cw.style.display = 'block'; }
-    }
-    const badge = document.getElementById('storageBadge');
-    if (badge) {
-      badge.className = 'storage-badge ' + emotion.storageType;
-      const bIcon = badge.querySelector('.badge-icon');
-      if (bIcon) bIcon.className = 'badge-icon mdi mdi-' + (emotion.storageType === 'cloud' ? 'cloud' : 'folder');
-      const bText = badge.querySelector('.badge-text');
-      if (bText) bText.textContent = emotion.storageType === 'cloud' ? '云端存储' : '本地存储';
-    }
-    const cb = document.getElementById('convertBtn');
-    if (cb) {
-      const hp = emotion.storageType === 'cloud'
-        ? this.emotionService.findPairedEmotion(emotion, 'local')
-        : this.emotionService.findPairedEmotion(emotion, 'cloud');
-      if (hp) {
-        cb.innerHTML = '<i class="mdi mdi-' + (emotion.storageType === 'cloud' ? 'folder-download' : 'cloud-upload') + '"></i><span>' + (emotion.storageType === 'cloud' ? '保存到本地' : '上传到云端') + '</span>';
-        cb.disabled = false;
-      } else {
-        cb.innerHTML = '<i class="mdi mdi-' + (emotion.storageType === 'cloud' ? 'folder-download' : 'cloud-upload') + '"></i><span>' + (emotion.storageType === 'cloud' ? '保存到本地' : '上传到云端') + '</span>';
-        cb.disabled = false;
-      }
+    const paired = this.emotionService.findPairedEmotion(
+      emotion,
+      emotion.storageType === 'cloud' ? 'local' : 'cloud'
+    );
+    this.detailVersions = {
+      local: emotion.storageType === 'local' ? emotion : paired,
+      cloud: emotion.storageType === 'cloud' ? emotion : paired
+    };
+
+    this._setDetailImage('local', this.detailVersions.local);
+    this._setDetailImage('cloud', this.detailVersions.cloud);
+    const sw = document.getElementById('previewSwitch');
+    if (sw) {
+      sw.style.display = (this.detailVersions.local && this.detailVersions.cloud) ? 'flex' : 'none';
     }
 
-    // 删除下拉菜单：根据是否有配对动态设置选项
-    const paired = emotion.storageType === 'cloud'
-      ? this.emotionService.findPairedEmotion(emotion, 'local')
-      : this.emotionService.findPairedEmotion(emotion, 'cloud');
+    this._renderDetailVersion(emotion.storageType);
+    this._renderDetailTags(emotion);
+    this._resetTagEditor();
+    this.showModal('emotionModal');
+  }
+
+  switchDetailVersion(storageType) {
+    const target = this.detailVersions && this.detailVersions[storageType];
+    if (!target || target === this.currentEmotion) return;
+    this.currentEmotion = target;
+    this._renderDetailVersion(storageType);
+    this._renderDetailTags(target);
+    this._resetTagEditor();
+  }
+
+  _setDetailImage(storageType, emotion) {
+    const img = document.getElementById(storageType === 'cloud' ? 'modalCloudImage' : 'modalLocalImage');
+    if (!img) return;
+    if (emotion && emotion.url) img.src = this.emotionService.getImageSrc(emotion);
+    else img.removeAttribute('src');
+  }
+
+  _renderDetailVersion(storageType) {
+    const em = (this.detailVersions && this.detailVersions[storageType]) || this.currentEmotion;
+    const li = document.getElementById('modalLocalImage');
+    const ci = document.getElementById('modalCloudImage');
+    if (li) li.classList.toggle('active', storageType === 'local');
+    if (ci) ci.classList.toggle('active', storageType === 'cloud');
+    document.querySelectorAll('.preview-switch-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.storage === storageType);
+    });
+
+    const badge = document.getElementById('storageBadge');
+    if (badge) {
+      badge.className = 'storage-badge ' + storageType;
+      const bIcon = badge.querySelector('.badge-icon');
+      if (bIcon) bIcon.className = 'badge-icon mdi mdi-' + (storageType === 'cloud' ? 'cloud-outline' : 'folder-outline');
+      const bText = badge.querySelector('.badge-text');
+      if (bText) bText.textContent = storageType === 'cloud' ? '云端存储' : '本地存储';
+    }
+
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const hasBoth = !!(this.detailVersions && this.detailVersions.local && this.detailVersions.cloud);
+    set('detailCreatedAt', this._formatDateTime(em.createdAt));
+    set('detailUpdatedAt', this._formatDateTime(em.updatedAt));
+    set('detailPairStatus', hasBoth ? '本地 + 云端' : '未配对');
+    set('detailId', em.id || '-');
+    const path = document.getElementById('detailPath');
+    if (path) { path.textContent = em.url || '-'; path.title = em.url || ''; }
+
+    const cb = document.getElementById('convertBtn');
+    if (cb) {
+      const toCloud = storageType === 'local';
+      cb.innerHTML = '<i class="mdi mdi-' + (toCloud ? 'cloud-upload-outline' : 'folder-download-outline') +
+        '"></i><span>' + (toCloud ? '上传到云端' : '保存到本地') + '</span>';
+    }
+
+    this._renderDeleteMenu(storageType);
+  }
+
+  _renderDeleteMenu(storageType) {
+    const paired = storageType === 'cloud' ? this.detailVersions.local : this.detailVersions.cloud;
     const deleteCurrentLabel = document.getElementById('deleteCurrentLabel');
     const deletePairedBtn = document.getElementById('deletePairedBtn');
     const deleteBothBtn = document.getElementById('deleteBothBtn');
     const deletePairedLabel = document.getElementById('deletePairedLabel');
-    if (deleteCurrentLabel) {
-      deleteCurrentLabel.textContent = emotion.storageType === 'cloud' ? '仅删除云端' : '仅删除本地';
-    }
+    if (deleteCurrentLabel) deleteCurrentLabel.textContent = storageType === 'cloud' ? '仅删除云端' : '仅删除本地';
     if (paired) {
       if (deletePairedBtn) deletePairedBtn.style.display = 'flex';
       if (deleteBothBtn) deleteBothBtn.style.display = 'flex';
-      if (deletePairedLabel) {
-        deletePairedLabel.textContent = emotion.storageType === 'cloud' ? '仅删除本地' : '仅删除云端';
-      }
+      if (deletePairedLabel) deletePairedLabel.textContent = storageType === 'cloud' ? '仅删除本地' : '仅删除云端';
     } else {
       if (deletePairedBtn) deletePairedBtn.style.display = 'none';
       if (deleteBothBtn) deleteBothBtn.style.display = 'none';
     }
+  }
+
+  _renderDetailTags(emotion) {
+    const tc = document.getElementById('detailTagCount');
     const tl = document.getElementById('tagList');
+    if (tc) tc.textContent = emotion.tags.length;
+    if (!tl) return;
+    tl.innerHTML = emotion.tags.length
+      ? emotion.tags.map(t => '<span class="tag">' + HtmlUtils.escapeHtml(t) + '</span>').join('')
+      : '<span class="tag-list-empty">暂无标签</span>';
+  }
+
+  _resetTagEditor() {
     const te = document.getElementById('tagEditor');
+    const tl = document.getElementById('tagList');
     const eb = document.getElementById('editTagsBtn');
-    if (tl) tl.innerHTML = emotion.tags.map(t => '<span class="tag">' + HtmlUtils.escapeHtml(t) + '</span>').join('');
     if (te) te.style.display = 'none';
     if (tl) tl.style.display = 'flex';
     if (eb) eb.innerHTML = '<i class="mdi mdi-tag"></i><span>编辑标签</span>';
-    this.showModal('emotionModal');
+  }
+
+  _formatDateTime(value) {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '-';
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
   toggleEditMode() {
@@ -377,10 +427,8 @@ class UIManager {
     this.emotionService.updateEmotion(this.currentEmotion);
     await this.emotionService.saveData();
     this.renderAllViews();
-    document.getElementById('tagList').innerHTML = tags.map(t => '<span class="tag">' + HtmlUtils.escapeHtml(t) + '</span>').join('');
-    document.getElementById('tagEditor').style.display = 'none';
-    document.getElementById('tagList').style.display = 'flex';
-    document.getElementById('editTagsBtn').innerHTML = '<i class="mdi mdi-tag"></i> 编辑标签';
+    this._renderDetailTags(this.currentEmotion);
+    this._resetTagEditor();
     this.notification.showMessage('标签已更新', 'success');
   }
 
@@ -514,6 +562,15 @@ class UIManager {
     this.searchService.setActiveSource(this.currentTab);
     const er = document.getElementById('externalResults');
     er.style.display = 'block';
+
+    // 命中缓存：直接渲染，切换标签页回来时不再请求接口
+    const cached = this.searchService.getCachedResult(keyword);
+    if (cached) {
+      this._renderExternalResults(cached.images, cached.keyword, cached.hasMore);
+      this._setupInfiniteScroll();
+      return;
+    }
+
     er.innerHTML = '<p class="hint-text">正在搜索...</p>';
     try {
       const result = await this.searchService.search(keyword, 1);
@@ -750,6 +807,10 @@ class UIManager {
     if (cb) cb.addEventListener('click', () => this.copyEmotionToClipboard());
     const etb = document.getElementById('editTagsBtn');
     if (etb) etb.addEventListener('click', () => this.toggleEditMode());
+
+    document.querySelectorAll('.preview-switch-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.switchDetailVersion(btn.dataset.storage));
+    });
     const db = document.getElementById('deleteBtn');
     if (db) db.addEventListener('click', (e) => { e.stopPropagation(); this.toggleDeleteDropdown(); });
     document.querySelectorAll('.delete-option').forEach(opt => {

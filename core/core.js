@@ -20,6 +20,7 @@
 const SettingsService = require('./services/SettingsService.js');
 const EmotionService = require('./services/EmotionService.js');
 const SearchService = require('./services/SearchService.js');
+const SearchCache = require('./services/SearchCache.js');
 
 /**
  * 创建应用实例
@@ -84,6 +85,7 @@ if (typeof module !== 'undefined' && module.exports) {
     SettingsService,
     EmotionService,
     SearchService,
+    SearchCache,
   };
 }
 // 浏览器环境：暴露 createApp 为全局变量
