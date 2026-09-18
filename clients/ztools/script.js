@@ -95,10 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
     uiManager.init();
     initUserInfo();
 
-    // ZTools 子输入框必须在 onPluginEnter 回调中设置才能生效
+    // ZTools 子输入框必须在 onPluginEnter 回调中设置才能生效。
+    // 同时把超级面板带来的关键词（action.payload）填入平台原生搜索框并执行搜索，
+    // 让用户进入后可以直接接着打字，再用方向键选择、回车复制，全程不用鼠标
     if (typeof ztools !== 'undefined' && ztools.onPluginEnter) {
-      ztools.onPluginEnter(() => {
+      ztools.onPluginEnter((action) => {
         uiManager.setupSubInput();
+        uiManager.handlePluginEnter(action);
       });
     }
 

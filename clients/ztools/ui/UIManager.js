@@ -23,6 +23,190 @@ class UIManager {
     this.loadingCount = 0;
     this._scrollBound = false;
     this.searchKeyword = '';
+    // 键盘导航状态
+    this.keyIndex = -1;
+    this.keySelecting = false;
+  }
+
+  // ─────────────── 键盘导航（全程免鼠标） ───────────────
+
+  /**
+   * 当前可见的结果项：
+   * - 「我的」标签 → #emotionGrid .emotion-card
+   * - 外部搜索源  → #externalResults .result-item（仅图片项，跳过"加载更多"）
+   */
+  _getKeyItems() {
+    if (this.currentView !== 'home') return [];
+    if (this.currentTab === 'mine') {
+      const grid = document.getElementById('emotionGrid');
+      if (!grid || grid.style.display === 'none') return [];
+      return Array.from(grid.querySelectorAll('.emotion-card'));
+    }
+    const er = document.getElementById('externalResults');
+    if (!er || er.style.display === 'none') return [];
+    return Array.from(er.querySelectorAll('.result-item[data-url]'));
+  }
+
+  _clearKeySelection() {
+    document.querySelectorAll('.is-key-selected').forEach(el => el.classList.remove('is-key-selected'));
+    const grid = document.getElementById('emotionGrid');
+    if (grid) grid.classList.remove('has-key-selection');
+    const er = document.getElementById('externalResults');
+    if (er) er.classList.remove('is-key-nav');
+    this.keySelecting = false;
+    this.keyIndex = -1;
+  }
+
+  /** 高亮第 index 项（内部用，已确保 items 非空） */
+  _setKeyIndex(index) {
+    const items = this._getKeyItems();
+    if (!items.length) return;
+    this.keyIndex = Math.max(0, Math.min(index, items.length - 1));
+    this.keySelecting = true;
+
+    document.querySelectorAll('.is-key-selected').forEach(el => el.classList.remove('is-key-selected'));
+    const el = items[this.keyIndex];
+    el.classList.add('is-key-selected');
+
+    const grid = document.getElementById('emotionGrid');
+    if (grid) grid.classList.add('has-key-selection');
+    const er = document.getElementById('externalResults');
+    if (er) er.classList.add('is-key-nav');
+
+    // 显示序号，纯键盘操作时明确当前是第几个
+    if (!el.querySelector('.card-index')) {
+      const badge = document.createElement('span');
+      badge.className = 'card-index';
+      el.appendChild(badge);
+    }
+    el.querySelector('.card-index').textContent = String(this.keyIndex + 1);
+
+    const mc = document.querySelector('.main-content');
+    if (mc) {
+      const top = el.offsetTop;
+      const bottom = top + el.offsetHeight;
+      if (top < mc.scrollTop) mc.scrollTop = top - 12;
+      else if (bottom > mc.scrollTop + mc.clientHeight) mc.scrollTop = bottom - mc.clientHeight + 12;
+    }
+  }
+
+  /** 结果变化后调用：键盘导航时保持选中态，否则清除 */
+  _refreshKeySelection() {
+    if (!this.keySelecting) return;
+    const items = this._getKeyItems();
+    if (!items.length) { this._clearKeySelection(); return; }
+    this._setKeyIndex(this.keyIndex < 0 ? 0 : Math.min(this.keyIndex, items.length - 1));
+  }
+
+  /** 每行列数（用于上下键整行跳转） */
+  _getColumnCount() {
+    const el = this.currentTab === 'mine'
+      ? document.getElementById('emotionGrid')
+      : document.getElementById('externalResults');
+    if (el && el.style.display !== 'none') {
+      const n = getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length;
+      if (n > 0) return n;
+    }
+    return 4;
+  }
+
+  /** 回车：复制当前选中项 */
+  async _activateKeySelection() {
+    const items = this._getKeyItems();
+    if (!items.length) return;
+    const el = items[this.keyIndex < 0 ? 0 : this.keyIndex];
+    if (!el) return;
+
+    if (this.currentTab === 'mine') {
+      const em = this.emotionService.getAllEmotions().find(m => m.id === el.dataset.emotionId);
+      if (em) await this.copyEmotionImage(em);
+    } else if (el.dataset.url) {
+      await this.copyFromUrl(el.dataset.url);
+    }
+  }
+
+  /** Tab：切换到下一个搜索源（保留关键词） */
+  _cycleSearchSource(reverse = false) {
+    const tabs = Array.from(document.querySelectorAll('.tab-btn'));
+    if (tabs.length < 2) return;
+    const cur = tabs.findIndex(t => t.dataset.tab === this.currentTab);
+    const next = reverse ? (cur - 1 + tabs.length) % tabs.length : (cur + 1) % tabs.length;
+    this.switchTab(tabs[next].dataset.tab);
+    this._refreshKeySelection();
+  }
+
+  /** 插件页面内的全局键盘处理 */
+  _onGlobalKeyDown(e) {
+    const t = e.target;
+    const isEditable = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+
+    // Esc：关弹窗 / 关放大 / 退出键盘选择 / 清空搜索
+    if (e.key === 'Escape') {
+      const openModal = Array.from(document.querySelectorAll('.modal')).find(m => m.style.display === 'block');
+      if (openModal) { this.hideModal(openModal); return; }
+      const zoom = document.getElementById('imageZoomOverlay');
+      if (zoom && zoom.classList.contains('active')) { this._hideImageZoom(); return; }
+      if (this.keySelecting) { this._clearKeySelection(); return; }
+      if (this.searchKeyword) { this.searchKeyword = ''; this._clearKeySelection(); }
+      return;
+    }
+
+    if (isEditable) return;
+    if (this.currentView !== 'home') return;
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      if (!this._getKeyItems().length) return;
+      e.preventDefault();
+      const base = this.keyIndex < 0 ? -1 : this.keyIndex;
+      this._setKeyIndex(e.key === 'ArrowRight' ? base + 1 : base - 1);
+      return;
+    }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!this._getKeyItems().length) return;
+      e.preventDefault();
+      if (this.keyIndex < 0) { this._setKeyIndex(0); return; }
+      const cols = this._getColumnCount();
+      this._setKeyIndex(this.keyIndex + (e.key === 'ArrowDown' ? cols : -cols));
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      if (!this._getKeyItems().length) return;
+      e.preventDefault();
+      this._activateKeySelection();
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      this._cycleSearchSource(e.shiftKey);
+    }
+  }
+
+  /**
+   * 进入插件时调用（超级面板 / 关键词 / 普通进入）
+   * @param {object} action ZTools onPluginEnter 的回调参数
+   */
+  handlePluginEnter(action) {
+    const text = action && typeof action.payload === 'string' ? action.payload : '';
+    this.searchKeyword = (text || '').trim();
+
+    // 把超级面板带入的文本同步到平台原生子输入框，用户可直接看到并继续编辑
+    try {
+      if (typeof ztools !== 'undefined' && ztools.setSubInputValue) ztools.setSubInputValue(this.searchKeyword);
+    } catch (e) { /* 部分版本不支持，忽略 */ }
+
+    // 按当前标签执行搜索
+    if (this.currentTab === 'mine') {
+      this.searchEmotions(this.searchKeyword);
+    } else if (this.searchKeyword) {
+      this.handleExternalSearch(this.searchKeyword);
+    } else {
+      const er = document.getElementById('externalResults');
+      if (er) { er.style.display = 'block'; er.innerHTML = '<p class="hint-text">请输入关键词进行搜索</p>'; }
+    }
+    this._refreshKeySelection();
   }
 
   // ─────────────── ZTools 子输入框 ───────────────
@@ -30,19 +214,25 @@ class UIManager {
   setupSubInput() {
     if (typeof ztools !== 'undefined' && ztools.setSubInput) {
       ztools.setSubInput((data) => {
-        this.searchKeyword = data.text.trim();
+        const text = (data.text || '').trim();
+        this.searchKeyword = text;
         if (this.currentTab === 'mine') {
           this.searchEmotions(this.searchKeyword);
+        } else if (this.searchKeyword) {
+          this.handleExternalSearch(this.searchKeyword);
         } else {
-          if (this.searchKeyword) {
-            this.handleExternalSearch(this.searchKeyword);
-          } else {
-            const er = document.getElementById('externalResults');
-            if (er) { er.style.display = 'block'; er.innerHTML = '<p class="hint-text">请输入关键词进行搜索</p>'; }
-          }
+          const er = document.getElementById('externalResults');
+          if (er) { er.style.display = 'block'; er.innerHTML = '<p class="hint-text">请输入关键词进行搜索</p>'; }
         }
+        this._refreshKeySelection();
       }, '搜索表情包...');
     }
+  }
+
+  /** 从外部搜索结果复制（在线接口表情包） */
+  async copyFromUrl(url) {
+    try { await this.emotionService.copyToClipboard({ url }); this.notification.showMessage('已复制到剪贴板', 'success'); }
+    catch (e) { this.notification.showMessage(e.message, 'error'); }
   }
 
   showLoading(message = '加载中...') {
@@ -225,6 +415,7 @@ class UIManager {
     grid.innerHTML = emotions.map(e => this._renderEmotionCard(e)).join('');
     this.observeImages();
     this._bindCardEvents(grid, emotions);
+    this._refreshKeySelection();
   }
 
   renderLocalView() {
@@ -568,14 +759,18 @@ class UIManager {
     if (cached) {
       this._renderExternalResults(cached.images, cached.keyword, cached.hasMore);
       this._setupInfiniteScroll();
+      this._refreshKeySelection();
       return;
     }
 
     er.innerHTML = '<p class="hint-text">正在搜索...</p>';
     try {
       const result = await this.searchService.search(keyword, 1);
-      if (result.images.length > 0) { this._renderExternalResults(result.images, keyword, result.hasMore); this._setupInfiniteScroll(); }
-      else { er.innerHTML = '<p class="hint-text">未找到表情包，请尝试其他关键词</p>'; }
+      if (result.images.length > 0) {
+        this._renderExternalResults(result.images, keyword, result.hasMore);
+        this._setupInfiniteScroll();
+        this._refreshKeySelection();
+      } else { er.innerHTML = '<p class="hint-text">未找到表情包，请尝试其他关键词</p>'; }
     } catch (e) { er.innerHTML = '<p class="hint-text">搜索失败，请稍后重试</p>'; this.notification.showMessage('搜索失败: ' + e.message, 'error'); }
   }
 
@@ -855,6 +1050,8 @@ class UIManager {
         if (e.target === zoomOverlay) this._hideImageZoom();
       });
     }
+    document.addEventListener('keydown', (e) => this._onGlobalKeyDown(e));
+
     const zoomedImg = document.getElementById('zoomedImage');
     if (zoomedImg) {
       zoomedImg.addEventListener('click', (e) => e.stopPropagation());

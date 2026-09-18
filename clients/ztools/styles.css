@@ -390,6 +390,55 @@ body {
     border-color: #ef4444;
 }
 
+/* ── 键盘导航选中态 ── */
+.emotion-grid.has-key-selection .emotion-card:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--border-color);
+}
+
+.emotion-card.is-key-selected,
+#externalResults.is-key-nav .result-item.is-key-selected {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+    transform: translateY(-3px);
+}
+
+.emotion-card.is-key-selected .copy-overlay,
+#externalResults.is-key-nav .result-item.is-key-selected .copy-overlay {
+    opacity: 1;
+}
+
+/* 选中卡片上的序号，便于纯键盘操作时确认位置 */
+.card-index {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 6px;
+    background: var(--accent-color);
+    color: var(--inverse-text);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 20px;
+    text-align: center;
+    z-index: 11;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.emotion-card.is-key-selected .card-index,
+#externalResults.is-key-nav .result-item.is-key-selected .card-index {
+    opacity: 1;
+}
+
+#externalResults .result-item {
+    position: relative;
+}
+
 .emotion-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

@@ -30,9 +30,13 @@
 
 ### 搜索表情包
 
-1. 在顶部搜索框输入关键词
-2. 支持模糊搜索标签
-3. 实时显示搜索结果
+1. 进入插件（含从超级面板进入）后，可直接使用平台原生搜索框输入关键词；若从超级面板进入，选中的文本会自动填入搜索框并执行搜索
+2. 输入关键词后实时显示搜索结果
+3. 全程可用键盘操作，无需鼠标：
+   - `↑` `↓` `←` `→` 选择表情包
+   - `Enter` 复制选中的表情包到剪贴板
+   - `Tab` / `Shift+Tab` 切换搜索源（我的 / 遇见 / QQ / 百度 / 搜狗 / 接口盒子）
+   - `Esc` 清空搜索或关闭弹窗
 
 ### 管理表情包
 
@@ -59,3 +63,42 @@
 ## 开发说明
 
 ### 项目结构
+
+```
+表情罐头 - 客户端/
+├── core/                  # 共享核心层（接口 / 模型 / 服务 / 搜索源）
+├── clients/               # 各平台客户端源码
+│   ├── utools/            # uTools 客户端（HTML/CSS/JS + adapters）
+│   └── ztools/            # zTools 客户端
+├── dist/                  # 构建产物（不入版本库，由 build.js 生成）
+├── build.js               # 多客户端构建脚本
+├── package.json           # 工程配置（脚本入口，零依赖）
+└── README.md
+```
+
+### 构建
+
+本项目是**零依赖构建**：`build.js` 只使用 Node.js 内置的 `fs` / `path`，无需安装任何依赖，也不需要联网。
+
+```bash
+node build.js          # 等价写法，直接构建全部客户端
+node build.js utools   # 只构建指定客户端（utools / ztools）
+```
+
+如果希望用统一的脚本入口（推荐给 CI 或编辑器任务），也可以用 npm：
+
+```bash
+npm run build           # 等价于 node build.js，构建全部客户端
+npm run build:utools    # 等价于 node build.js utools
+npm run build:ztools    # 等价于 node build.js ztools
+```
+
+> `package.json` 中 `dependencies` / `devDependencies` 均为空，且刻意保持为空——项目特色就是「零依赖构建」。因此不需要执行 `npm install`，克隆仓库后直接 `node build.js` 即可出产物。后续如需引入 ESLint 等工具，应作为 `devDependencies` 声明，运行时依赖仍应保持为零。
+
+构建脚本会把 `clients/<客户端>/` 与 `core/` 合并输出到 `dist/<客户端>/`，并自动完成：
+
+- 重写产物中的 `require` 相对路径，使产物可独立运行
+- 移除浏览器环境不支持的 `require()` 调用，并在 `index.html` 中按依赖顺序注入 `<script>` 标签
+- 修复 `materialdesignicons.min.css` 中缺失的字体与 source map 引用
+
+产物目录 `dist/` 已在 `.gitignore` 中忽略，不纳入版本管理。
