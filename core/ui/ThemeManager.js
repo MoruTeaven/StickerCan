@@ -1,8 +1,11 @@
 /**
- * ThemeManager - 主题管理器（uTools 客户端）
+ * ThemeManager - 主题管理器（共享实现）
+ *
+ * 本文件为 uTools / zTools 两端共用的唯一实现，位于 core/ 共享层。
+ * 修改本文件即同时生效于两端；请勿在客户端 ui 目录下重建副本。
  *
  * 管理深色/浅色/跟随系统主题。
- * 支持 uTools 设置持久化和 localStorage 兜底。
+ * 支持设置持久化和 localStorage 兜底。
  */
 
 class ThemeManager {

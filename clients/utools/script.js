@@ -14,8 +14,10 @@ const UToolsClipboardProvider = require('./adapters/UToolsClipboardProvider.js')
 const UToolsFileProvider = require('./adapters/UToolsFileProvider.js');
 const UToolsHttpProvider = require('./adapters/UToolsHttpProvider.js');
 const UToolsNotificationProvider = require('./adapters/UToolsNotificationProvider.js');
-const ThemeManager = require('./ui/ThemeManager.js');
-const ChangelogManager = require('./ui/ChangelogManager.js');
+// 共享 UI 模块（core 层单源，两端共用同一实现）
+const ThemeManager = require('../../core/ui/ThemeManager.js');
+const ChangelogManager = require('../../core/ui/ChangelogManager.js');
+// 客户端特有 UI（两端存在实质差异，不共享）
 const UIManager = require('./ui/UIManager.js');
 
 // 添加动画样式

@@ -135,7 +135,12 @@ function getFrontendScriptOrder(clientName) {
     // Layer 3: 核心入口（聚合所有核心模块）
     'core/core.js',
 
-    // Layer 4: 适配器（依赖接口）- 根据客户端名称动态生成
+    // Layer 4: 适配器（依赖接口）
+    // 共享适配器基类（core/adapters/）—— 两端共用同一实现，客户端适配器继承之。
+    // 基类必须先于客户端适配器加载（后者 extends 前者）。
+    'core/adapters/SharedFileProvider.js',
+
+    // 客户端适配器（薄包装，注入平台全局对象）- 根据客户端名称动态生成
     `adapters/${prefix}StorageProvider.js`,
     `adapters/${prefix}ClipboardProvider.js`,
     `adapters/${prefix}FileProvider.js`,
@@ -143,8 +148,14 @@ function getFrontendScriptOrder(clientName) {
     `adapters/${prefix}NotificationProvider.js`,
 
     // Layer 5: UI 管理器
-    'ui/ThemeManager.js',
-    'ui/ChangelogManager.js',
+    // 共享 UI（core/ui/）—— 两端共用同一实现，禁止在 clients/*/ui/ 重建副本。
+    // ChangelogData 必须先于 ChangelogManager（后者依赖其全局数据）；
+    // ThemeManager 必须先于 UIManager。
+    'core/ui/ChangelogData.js',
+    'core/ui/ThemeManager.js',
+    'core/ui/ChangelogManager.js',
+
+    // 客户端各自实现（两端存在实质差异，不做共享）
     'ui/UIManager.js',
   ];
 }
@@ -361,6 +372,18 @@ function buildClient(clientName) {
 
 function main() {
   console.log('===== 开始构建 =====');
+
+  // 构建前置校验：拦截更新日志数据漂移与共享模块副本
+  // （历史上 ChangelogManager 双副本曾因 changes 重复键静默丢失更新条目）
+  try {
+    const { execFileSync } = require('child_process');
+    execFileSync(process.execPath, [path.join(ROOT, 'tools', 'check-changelog.js')], {
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    console.error('\n✗ 前置校验失败，构建中止');
+    process.exit(1);
+  }
 
   // 获取要构建的客户端列表
   const target = process.argv[2]; // 可选参数: 指定客户端名

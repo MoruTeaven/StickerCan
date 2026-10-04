@@ -14,8 +14,10 @@ const ZToolsClipboardProvider = require('./adapters/ZToolsClipboardProvider.js')
 const ZToolsFileProvider = require('./adapters/ZToolsFileProvider.js');
 const ZToolsHttpProvider = require('./adapters/ZToolsHttpProvider.js');
 const ZToolsNotificationProvider = require('./adapters/ZToolsNotificationProvider.js');
-const ThemeManager = require('./ui/ThemeManager.js');
-const ChangelogManager = require('./ui/ChangelogManager.js');
+// 共享 UI 模块（core 层单源，两端共用同一实现）
+const ThemeManager = require('../../core/ui/ThemeManager.js');
+const ChangelogManager = require('../../core/ui/ChangelogManager.js');
+// 客户端特有 UI（两端存在实质差异，不共享）
 const UIManager = require('./ui/UIManager.js');
 
 // 添加动画样式

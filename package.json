@@ -1,0 +1,26 @@
+{
+  "name": "sticker-can",
+  "version": "1.2.2",
+  "private": true,
+  "description": "表情罐头 —— uTools / zTools 表情包管理插件（多客户端共享 core 层，零依赖构建）",
+  "keywords": [
+    "utools",
+    "ztools",
+    "sticker",
+    "emoji",
+    "plugin"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "build:utools": "node build.js utools",
+    "build:ztools": "node build.js ztools",
+    "check": "node tools/check-changelog.js",
+    "verify": "node tools/check-changelog.js && node build.js && node tools/smoke-test.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
