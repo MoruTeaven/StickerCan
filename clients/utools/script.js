@@ -8,15 +8,15 @@
  * 4. 暴露全局对象供 HTML onclick 使用
  */
 
-const { createApp } = require('../../core/core.js');
+const { createApp } = require('@moruteaven/sticker-core/core.js');
 const UToolsStorageProvider = require('./adapters/UToolsStorageProvider.js');
 const UToolsClipboardProvider = require('./adapters/UToolsClipboardProvider.js');
 const UToolsFileProvider = require('./adapters/UToolsFileProvider.js');
 const UToolsHttpProvider = require('./adapters/UToolsHttpProvider.js');
 const UToolsNotificationProvider = require('./adapters/UToolsNotificationProvider.js');
 // 共享 UI 模块（core 层单源，两端共用同一实现）
-const ThemeManager = require('../../core/ui/ThemeManager.js');
-const ChangelogManager = require('../../core/ui/ChangelogManager.js');
+const ThemeManager = require('@moruteaven/sticker-core/ui/ThemeManager.js');
+const ChangelogManager = require('@moruteaven/sticker-core/ui/ChangelogManager.js');
 // 客户端特有 UI（两端存在实质差异，不共享）
 const UIManager = require('./ui/UIManager.js');
 
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const httpProvider = new UToolsHttpProvider();
 
     // 先创建 ThemeManager（NotificationProvider 依赖它）
-    const settingsService = new (require('../../core/services/SettingsService.js'))({
+    const settingsService = new (require('@moruteaven/sticker-core/services/SettingsService.js'))({
       storageProvider,
       fileProvider,
     });
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileProvider = new UToolsFileProvider();
     const httpProvider = new UToolsHttpProvider();
 
-    const settingsService = new (require('../../core/services/SettingsService.js'))({
+    const settingsService = new (require('@moruteaven/sticker-core/services/SettingsService.js'))({
       storageProvider,
       fileProvider,
     });

@@ -5,7 +5,7 @@
  * 此处仅注入 zTools 平台全局对象。
  */
 
-const SharedFileProvider = require('../../../core/adapters/SharedFileProvider.js');
+const SharedFileProvider = require('@moruteaven/sticker-core/adapters/SharedFileProvider.js');
 
 class ZToolsFileProvider extends SharedFileProvider {
   constructor() {

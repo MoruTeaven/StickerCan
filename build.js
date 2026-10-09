@@ -1,31 +1,67 @@
 /**
- * build.js - 多客户端构建脚本
+ * build.js - 多客户端构建脚本（esbuild 版）
  *
- * 遍历 clients/ 下的每个客户端目录，将其与 core/ 合并构建到 dist/ 下。
- * 例如：clients/utools/ → dist/utools/
+ * 以 clients/<平台>/script.js 为入口，esbuild 把 core/ 与 adapters/ui 通过
+ * 显式 require 构成的依赖图打包成单个 dist/<平台>/script.js（IIFE）。
+ * 不再需要手工维护加载顺序，也不再复制散落的模块文件。
  *
- * 构建时会自动重写 require 路径，使产物可独立运行：
- *   - 客户端根目录的 .js:  ../../core/  → ./core/
- *   - 客户端一级子目录的 .js: ../../../core/  → ../core/
- *   - 客户端二级子目录的 .js: ../../../../core/ → ../../core/
+ * 构建流水线：
+ *   1. 前置校验：node tools/check-changelog.js（防漂移）
+ *   2. 整目录复制 clients/<平台>/ → dist/<平台>/（静态资源原样保留）
+ *   3. esbuild 打包 → dist/<平台>/script.js（覆盖入口）
+ *   4. 删除产物中已内联的 adapters/、ui/ 目录
+ *   5. 修复 materialdesignicons.min.css 缺失字体引用
  *
- * 构建后还会进行浏览器兼容性处理：
- *   - 移除前端 JS 文件中的 require() 调用（浏览器不支持 CommonJS）
- *   - 在 index.html 中按依赖顺序注入 <script> 标签
- *   - 修复 materialdesignicons.min.css 中缺失字体文件和 source map 的引用
+ * preload.js 运行在 Node.js（uTools 预加载），不参与打包，原样复制。
+ * index.html 只保留 <script src="script.js">，指向打包后的单文件。
  *
  * 用法:
- *   node build.js           构建所有客户端
- *   node build.js utools    仅构建指定客户端
+ *   node build.js              构建所有客户端
+ *   node build.js utools       仅构建指定客户端
+ *   node build.js --minify     压缩产物（可与客户端名组合）
  */
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync, execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname);
 const CLIENTS_DIR = path.join(ROOT, 'clients');
-const SRC_CORE = path.join(ROOT, 'core');
 const DIST_DIR = path.join(ROOT, 'dist');
+
+/**
+ * 定位 esbuild 平台二进制。
+ *
+ * 通过 spawnSync(…, { stdio: 'inherit' }) 直接调 CLI，而不是 esbuild 的 JS API：
+ *   - JS API 需要服务进程 + 管道通信，部分受限沙箱环境禁止命名管道；
+ *   - pnpm isolated 布局下，JS API 的裸 require.resolve 在个别 Windows
+ *     符号链接环境会解析不到平台二进制，本函数显式定位后直调，规避两者。
+ */
+function findEsbuildBinary() {
+  const fromEnv = process.env.ESBUILD_BINARY_PATH;
+  if (fromEnv && fs.existsSync(fromEnv)) return fromEnv;
+
+  const subpath = process.platform === 'win32' ? 'esbuild.exe' : path.join('bin', 'esbuild');
+  const pkg = `@esbuild/${process.platform}-${process.arch}`;
+
+  const roots = [];
+  try {
+    const esbuildRoot = path.dirname(require.resolve('esbuild/package.json'));
+    roots.push(esbuildRoot);
+    try {
+      // 真实路径：pnpm 下 esbuild/ 是符号链接，兄弟目录 @esbuild 在真实路径下
+      roots.push(fs.realpathSync(esbuildRoot));
+    } catch { /* 符号链接解析失败则仅用链接路径 */ }
+  } catch { /* esbuild 未安装，落到下方友好报错 */ }
+
+  for (const root of roots) {
+    const candidate = path.join(path.dirname(root), pkg, subpath);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  console.error(`✗ 未找到 esbuild 平台二进制 (${pkg})，请先执行: pnpm install`);
+  process.exit(1);
+}
 
 // ── 工具函数 ──
 
@@ -44,42 +80,6 @@ function copyDir(src, dest) {
   }
 }
 
-function rewriteRequires(filePath, from, to) {
-  if (!fs.existsSync(filePath)) return;
-  let content = fs.readFileSync(filePath, 'utf-8');
-  content = content.split(from).join(to);
-  fs.writeFileSync(filePath, content, 'utf-8');
-}
-
-/**
- * 递归处理目录下所有 .js 文件的 require 路径
- * 根据文件相对于客户端根目录的深度，自动计算路径映射
- */
-function rewriteRequirePaths(clientDir, clientRoot) {
-  if (!fs.existsSync(clientDir)) return;
-  const entries = fs.readdirSync(clientDir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(clientDir, entry.name);
-    if (entry.isDirectory()) {
-      rewriteRequirePaths(fullPath, clientRoot);
-    } else if (entry.name.endsWith('.js')) {
-      // 计算文件相对于客户端根目录的深度
-      const rel = path.relative(clientRoot, path.dirname(fullPath));
-      const depth = rel === '' ? 0 : rel.split(path.sep).length;
-
-      // 源码中的 require 路径: 从 depth 层目录引用 core
-      //   depth 0 (根目录):  ../../core/  → ./core/
-      //   depth 1 (子目录):  ../../../core/ → ../core/
-      //   depth 2 (孙目录):  ../../../../core/ → ../../core/
-      const fromPrefix = '../'.repeat(depth + 2);  // depth 0 → ../../, depth 1 → ../../../, ...
-      const toPrefix = depth === 0 ? './' : '../'.repeat(depth);
-      const from = fromPrefix + 'core/';
-      const to = toPrefix + 'core/';
-      rewriteRequires(fullPath, from, to);
-    }
-  }
-}
-
 function listFiles(dir, prefix = '') {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
@@ -91,200 +91,6 @@ function listFiles(dir, prefix = '') {
       console.log(`${prefix}${entry.name}`);
     }
   }
-}
-
-// ── 浏览器兼容性后处理 ──
-
-/**
- * 需要在浏览器中按顺序加载的前端 JS 文件列表（不含 preload.js）。
- * 顺序按照依赖关系拓扑排序：被依赖的文件先加载。
- * 适配器部分根据客户端名称动态生成（如 UTools / ZTools）。
- */
-function getFrontendScriptOrder(clientName) {
-  // 根据客户端名称推断适配器前缀（如 utools → UTools, ztools → ZTools）
-  // 规则：首字母大写 + "Tools"（因为 tools 部分的 T 也需要大写）
-  const prefix = clientName.charAt(0).toUpperCase() + 'Tools';
-  return [
-    // Layer 0: 接口和模型（无依赖）
-    'core/interfaces/StorageProvider.js',
-    'core/interfaces/ClipboardProvider.js',
-    'core/interfaces/FileProvider.js',
-    'core/interfaces/HttpProvider.js',
-    'core/interfaces/NotificationProvider.js',
-    'core/interfaces/SearchProvider.js',
-    'core/models/Emotion.js',
-    'core/models/Settings.js',
-    'core/utils/CryptoUtils.js',
-    'core/utils/MimeUtils.js',
-    'core/utils/HtmlUtils.js',
-
-    // Layer 1: 基类和服务（依赖接口/模型/工具）
-    'core/search/SearchSourceBase.js',
-    'core/services/SettingsService.js',
-    'core/services/EmotionService.js',
-    'core/services/SearchCache.js',
-
-    // Layer 2: 搜索源和搜索服务（依赖基类）
-    'core/search/ApiHzSearchSource.js',
-    'core/search/BaiduSearchSource.js',
-    'core/search/QQSearchSource.js',
-    'core/search/SogouSearchSource.js',
-    'core/search/YujianSearchSource.js',
-    'core/services/SearchService.js',
-
-    // Layer 3: 核心入口（聚合所有核心模块）
-    'core/core.js',
-
-    // Layer 4: 适配器（依赖接口）
-    // 共享适配器基类（core/adapters/）—— 两端共用同一实现，客户端适配器继承之。
-    // 基类必须先于客户端适配器加载（后者 extends 前者）。
-    'core/adapters/SharedFileProvider.js',
-
-    // 客户端适配器（薄包装，注入平台全局对象）- 根据客户端名称动态生成
-    `adapters/${prefix}StorageProvider.js`,
-    `adapters/${prefix}ClipboardProvider.js`,
-    `adapters/${prefix}FileProvider.js`,
-    `adapters/${prefix}HttpProvider.js`,
-    `adapters/${prefix}NotificationProvider.js`,
-
-    // Layer 5: UI 管理器
-    // 共享 UI（core/ui/）—— 两端共用同一实现，禁止在 clients/*/ui/ 重建副本。
-    // ChangelogData 必须先于 ChangelogManager（后者依赖其全局数据）；
-    // ThemeManager 必须先于 UIManager。
-    'core/ui/ChangelogData.js',
-    'core/ui/ThemeManager.js',
-    'core/ui/ChangelogManager.js',
-
-    // 客户端各自实现（两端存在实质差异，不做共享）
-    'ui/UIManager.js',
-  ];
-}
-
-/**
- * 从 require 调用中提取模块名（取文件名不含扩展名，首字母大写作为全局类名）
- * 例如：require('../core/interfaces/StorageProvider.js') → StorageProvider
- *       require('./core/core.js') → { createApp } (特殊处理)
- */
-function getGlobalNameFromRequire(requirePath) {
-  const basename = path.basename(requirePath, '.js');
-  return basename;
-}
-
-/**
- * 移除前端 JS 文件中的 require() 调用
- *
- * 在浏览器环境中，所有 class 定义在全局作用域中会自动成为全局变量，
- * 不需要 require 来加载。此函数将 require 行替换为注释。
- *
- * 处理模式：
- *   const XXX = require('...');        → 删除（类已全局可用）
- *   const { createApp } = require('...'); → 删除（createApp 已全局可用）
- *   require('...')  (内联调用)         → 删除或替换
- */
-function stripRequireCalls(filePath) {
-  if (!fs.existsSync(filePath)) return;
-  let content = fs.readFileSync(filePath, 'utf-8');
-
-  // 1. 移除顶层 const XXX = require('...'); 行
-  //    匹配: const XxxProvider = require('../core/interfaces/XxxProvider.js');
-  content = content.replace(
-    /^const\s+\w+\s*=\s*require\(['"][^'"]+[']\);?\s*$/gm,
-    '// [browser] 上述模块已通过 <script> 标签全局加载'
-  );
-
-  // 2. 移除顶层 const { createApp } = require('...'); 行
-  content = content.replace(
-    /^const\s+\{\s*\w+\s*\}\s*=\s*require\(['"][^'"]+[']\);?\s*$/gm,
-    '// [browser] 上述模块已通过 <script> 标签全局加载'
-  );
-
-  // 3. 移除顶层 const { createApp } = require('...'); 行（无分号）
-  content = content.replace(
-    /^const\s+\{\s*\w+\s*\}\s*=\s*require\(['"][^'"]+[']\)\s*$/gm,
-    '// [browser] 上述模块已通过 <script> 标签全局加载'
-  );
-
-  // 4. 处理内联 require 调用，如: new (require('./core/services/SettingsService.js'))({...})
-  //    替换为直接使用全局类名
-  content = content.replace(
-    /require\(['"](?:\.\/)?(?:\.\.\/)*(?:core\/(?:services\/|search\/|utils\/|models\/|interfaces\/))?(\w+)\.js['"]\)/g,
-    (match, className) => className
-  );
-
-  // 5. 处理 require('electron') 等内联 Node.js 模块调用
-  //    在浏览器环境中用 try-catch 包裹的 require('electron') 需要特殊处理
-  //    将 require('electron') 替换为 undefined（外层已有 try-catch）
-  content = content.replace(
-    /require\(['"]electron['"]\)/g,
-    'undefined'
-  );
-
-  // 6. 移除对 Node.js 内置模块的 require（fs, path, os, https, http）
-  //    这些在 UToolsFileProvider/UToolsHttpProvider 中被 import 但实际通过 window.emotionCan 使用
-  content = content.replace(
-    /^const\s+(fs|path|os|https|http)\s*=\s*require\(['"](fs|path|os|https|http)[']\);?\s*$/gm,
-    '// [browser] Node.js 模块 "$1" 在浏览器中不可用，相关功能通过 preload.js (window.emotionCan) 提供'
-  );
-
-  // 7. 处理 core.js 中的 module.exports 块
-  //    源码已改为条件导出（if typeof module !== 'undefined'），
-  //    在浏览器中会安全跳过，但块内仍含 require() 调用。
-  //    如果存在旧的无保护格式，也一并处理。
-  //    a) 移除旧格式：无保护的 module.exports = {...};
-  content = content.replace(
-    /\/\/ 导出所有模块\nmodule\.exports\s*=\s*\{[\s\S]*?\};/g,
-    `// 导出所有模块（浏览器兼容）
-// 在浏览器环境中，所有类已经是全局变量，只需暴露 createApp
-if (typeof window !== 'undefined') {
-  window.createApp = createApp;
-}`
-  );
-  //    b) 新格式已有条件检查，浏览器中安全跳过，无需额外处理
-
-  fs.writeFileSync(filePath, content, 'utf-8');
-}
-
-/**
- * 递归处理所有前端 JS 文件（排除 preload.js）
- */
-function processFrontendJs(clientDir, clientName) {
-  const scriptOrder = getFrontendScriptOrder(clientName);
-  for (const relPath of scriptOrder) {
-    const fullPath = path.join(clientDir, relPath);
-    stripRequireCalls(fullPath);
-  }
-  // 处理 script.js
-  stripRequireCalls(path.join(clientDir, 'script.js'));
-}
-
-/**
- * 修改 index.html：移除旧的 <script src="script.js">，
- * 替换为按依赖顺序加载所有前端 JS 文件的 <script> 标签
- */
-function injectScriptTags(clientDir, clientName) {
-  const htmlPath = path.join(clientDir, 'index.html');
-  if (!fs.existsSync(htmlPath)) return;
-
-  let html = fs.readFileSync(htmlPath, 'utf-8');
-
-  // 构建 <script> 标签
-  const scriptOrder = getFrontendScriptOrder(clientName);
-  const scriptTags = scriptOrder
-    .map(p => `    <script src="${p}"></script>`)
-    .join('\n');
-
-  // 替换原来的 <script src="script.js"></script>
-  const oldScriptTag = '<script src="script.js"></script>';
-  const newScriptTags = `${scriptTags}\n    <script src="script.js"></script>`;
-
-  if (html.includes(oldScriptTag)) {
-    html = html.replace(oldScriptTag, newScriptTags);
-  } else {
-    // 如果没找到，在 </body> 前注入
-    html = html.replace('</body>', `${newScriptTags}\n</body>`);
-  }
-
-  fs.writeFileSync(htmlPath, html, 'utf-8');
 }
 
 /**
@@ -299,14 +105,7 @@ function fixMaterialIconsCss(clientDir) {
 
   let content = fs.readFileSync(cssPath, 'utf-8');
 
-  // 直接替换整个 @font-face 的 src 块
-  // 原始格式：
-  //   src:url("./fonts/materialdesignicons-webfont.eot?v=7.4.47");
-  //   src:url("./fonts/materialdesignicons-webfont.eot?#iefix&v=7.4.47") format("embedded-opentype"),
-  //       url("./fonts/materialdesignicons-webfont.woff2?v=7.4.47") format("woff2"),
-  //       url("./fonts/materialdesignicons-webfont.woff?v=7.4.47") format("woff"),
-  //       url("./fonts/materialdesignicons-webfont.ttf?v=7.4.47") format("truetype");
-  // 替换为只含 woff2 和 woff 的版本：
+  // 只含 woff2 和 woff 的版本：
   const newSrc = 'src:url("./fonts/materialdesignicons-webfont.woff2?v=7.4.47") format("woff2"),url("./fonts/materialdesignicons-webfont.woff?v=7.4.47") format("woff")';
 
   // 匹配从第一个 src: 开始到 format("truetype") 结束的整个块
@@ -326,7 +125,7 @@ function fixMaterialIconsCss(clientDir) {
 
 // ── 构建 ──
 
-function buildClient(clientName) {
+function buildClient(esbuildBin, clientName, minify) {
   const srcClient = path.join(CLIENTS_DIR, clientName);
   if (!fs.existsSync(srcClient)) {
     console.error(`✘ 客户端不存在: ${clientName}`);
@@ -344,22 +143,36 @@ function buildClient(clientName) {
   }
   fs.mkdirSync(distClient, { recursive: true });
 
-  // 1. 复制客户端文件
-  console.log('  复制客户端文件...');
+  // 1. 整目录复制（index.html / styles.css / plugin.json / logo.png / lib / preload.js 原样保留）
+  console.log('  复制客户端静态资源...');
   copyDir(srcClient, distClient);
 
-  // 2. 复制 core/ 到产物目录下
-  console.log('  复制 core 核心层...');
-  copyDir(SRC_CORE, path.join(distClient, 'core'));
+  // 2. esbuild 打包（覆盖 dist/<client>/script.js）
+  console.log('  esbuild 打包...');
+  const outfile = path.join(distClient, 'script.js');
+  const args = [
+    path.join(srcClient, 'script.js'),
+    '--bundle',
+    `--outfile=${outfile}`,
+    '--format=iife',
+    '--platform=browser',
+    '--legal-comments=none',
+    '--log-level=warning',
+  ];
+  if (minify) args.push('--minify');
+  const result = spawnSync(esbuildBin, args, { stdio: 'inherit' });
+  if (result.status !== 0) {
+    console.error(`  ✘ ${clientName} 打包失败（esbuild 退出码 ${result.status}）`);
+    return false;
+  }
 
-  // 3. 重写 require 路径
-  console.log('  重写 require 路径...');
-  rewriteRequirePaths(distClient, distClient);
+  // 3. 模块源码已内联进 bundle，删除产物中不需要的副本
+  for (const leftover of ['adapters', 'ui']) {
+    fs.rmSync(path.join(distClient, leftover), { recursive: true, force: true });
+  }
 
-  // 4. 浏览器兼容性后处理
-  console.log('  执行浏览器兼容性处理...');
-  processFrontendJs(distClient, clientName);
-  injectScriptTags(distClient, clientName);
+  // 4. 图标 CSS 后处理
+  console.log('  修复图标 CSS...');
   fixMaterialIconsCss(distClient);
 
   // 5. 列出产物
@@ -373,10 +186,11 @@ function buildClient(clientName) {
 function main() {
   console.log('===== 开始构建 =====');
 
+  const esbuildBin = findEsbuildBinary();
+
   // 构建前置校验：拦截更新日志数据漂移与共享模块副本
   // （历史上 ChangelogManager 双副本曾因 changes 重复键静默丢失更新条目）
   try {
-    const { execFileSync } = require('child_process');
     execFileSync(process.execPath, [path.join(ROOT, 'tools', 'check-changelog.js')], {
       stdio: 'inherit',
     });
@@ -385,8 +199,11 @@ function main() {
     process.exit(1);
   }
 
-  // 获取要构建的客户端列表
-  const target = process.argv[2]; // 可选参数: 指定客户端名
+  // 解析参数: 可选客户端名 + 可选 --minify
+  const cliArgs = process.argv.slice(2);
+  const minify = cliArgs.includes('--minify');
+  const target = cliArgs.find(a => !a.startsWith('--'));
+
   let clients;
   if (target) {
     clients = [target];
@@ -401,11 +218,11 @@ function main() {
     return;
   }
 
-  console.log(`待构建客户端: ${clients.join(', ')}`);
+  console.log(`待构建客户端: ${clients.join(', ')}${minify ? '（minify）' : ''}`);
 
   let allOk = true;
   for (const name of clients) {
-    if (!buildClient(name)) allOk = false;
+    if (!buildClient(esbuildBin, name, minify)) allOk = false;
   }
 
   console.log('\n===== 构建结束 =====');

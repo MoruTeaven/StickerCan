@@ -1,0 +1,7 @@
+{
+  "name": "@moruteaven/sticker-core",
+  "version": "1.2.2",
+  "private": true,
+  "main": "core.js",
+  "license": "MIT"
+}

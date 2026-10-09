@@ -5,7 +5,7 @@
  * 业务逻辑委托给 EmotionService / SettingsService / SearchService。
  */
 
-const HtmlUtils = require('../../../core/utils/HtmlUtils.js');
+const HtmlUtils = require('@moruteaven/sticker-core/utils/HtmlUtils.js');
 
 class UIManager {
   constructor(deps = {}) {

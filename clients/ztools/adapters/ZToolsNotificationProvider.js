@@ -5,7 +5,7 @@
  * 使用 DOM 创建消息提示条。
  */
 
-const NotificationProvider = require('../../../core/interfaces/NotificationProvider.js');
+const NotificationProvider = require('@moruteaven/sticker-core/interfaces/NotificationProvider.js');
 
 class ZToolsNotificationProvider extends NotificationProvider {
   constructor(deps = {}) {

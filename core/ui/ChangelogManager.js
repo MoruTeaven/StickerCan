@@ -5,16 +5,20 @@
  *
  * 版本数据不在本文件中维护，而是由 `core/ui/ChangelogData.js` 单源提供，
  * 通过构造参数 `versions` 注入，避免双副本数据漂移。
+ *
+ * 注意：esbuild 打包后各模块拥有独立作用域，ChangelogData 必须显式 require，
+ * 不再依赖「<script> 顺序加载形成的全局变量」——打包后该全局不存在，
+ * 旧的 typeof 回退会静默走到「缺少版本数据」而白屏。
  */
+
+const ChangelogData = require('./ChangelogData.js');
 
 class ChangelogManager {
   /**
-   * @param {Array} versions 版本记录数组，来源于共享的 ChangelogData。
-   *   不传时回退到全局 ChangelogData（浏览器端 <script> 加载的共享数据）。
+   * @param {Array} versions 版本记录数组，不传时使用共享的 ChangelogData.versions。
    */
   constructor(versions) {
-    const data = versions
-      || (typeof ChangelogData !== 'undefined' ? ChangelogData.versions : null);
+    const data = versions || ChangelogData.versions;
 
     if (!Array.isArray(data)) {
       throw new Error('[ChangelogManager] 缺少版本数据 ChangelogData.versions');

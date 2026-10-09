@@ -27,3 +27,14 @@ Thumbs.db
 
 # 本地存储目录
 emotions/
+
+# pnpm 工作区产物
+node_modules/
+.pnpm-store/
+
+# DSH / 记忆插件本地目录
+.mnemon/
+.dsh-worktrees/
+
+# 损坏的备份文件
+AGENTS.md.corrupt

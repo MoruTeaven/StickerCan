@@ -4,7 +4,7 @@
  * 实现 StorageProvider 接口，封装 uTools 的 db / dbStorage API。
  */
 
-const StorageProvider = require('../../../core/interfaces/StorageProvider.js');
+const StorageProvider = require('@moruteaven/sticker-core/interfaces/StorageProvider.js');
 
 class UToolsStorageProvider extends StorageProvider {
   getNativeId() {

@@ -4,7 +4,7 @@
  * 实现 ClipboardProvider 接口，封装 ztools.copyImage。
  */
 
-const ClipboardProvider = require('../../../core/interfaces/ClipboardProvider.js');
+const ClipboardProvider = require('@moruteaven/sticker-core/interfaces/ClipboardProvider.js');
 
 class ZToolsClipboardProvider extends ClipboardProvider {
   copyImage(imageData) {

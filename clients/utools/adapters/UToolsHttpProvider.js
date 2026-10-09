@@ -6,7 +6,7 @@
  * 回退到浏览器标准 fetch。
  */
 
-const HttpProvider = require('../../../core/interfaces/HttpProvider.js');
+const HttpProvider = require('@moruteaven/sticker-core/interfaces/HttpProvider.js');
 class UToolsHttpProvider extends HttpProvider {
   async fetchWithTimeout(url, options = {}, timeout = 30000) {
     const controller = new AbortController();

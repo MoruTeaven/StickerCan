@@ -169,53 +169,15 @@ function checkNoClientCopies() {
   }
 }
 
-/**
- * 校验构建脚本的加载顺序包含全部共享 UI 模块。
- * 顺序错误会导致浏览器端因类未定义而失败。
- */
-function checkBuildScriptOrder() {
-  const buildFile = path.join(ROOT, 'build.js');
-  if (!fs.existsSync(buildFile)) return;
-
-  const source = fs.readFileSync(buildFile, 'utf-8');
-
-  // 共享 UI 必须在 core/ui/ 下按序加载；
-  // UIManager 是客户端各自实现（两端有实质差异），仍位于 ui/ 下。
-  const required = [
-    'core/ui/ChangelogData.js',
-    'core/ui/ThemeManager.js',
-    'core/ui/ChangelogManager.js',
-    'ui/UIManager.js',
-  ];
-
-  required.forEach(rel => {
-    if (!source.includes(rel)) {
-      fail(`build.js 的 getFrontendScriptOrder() 缺少脚本: ${rel}\n` +
-           `        → 浏览器端缺少该 <script> 标签会导致运行失败。`);
-    }
-  });
-
-  // ChangelogData 必须排在 ChangelogManager 之前（后者依赖前者的全局数据）
-  const idxData = source.indexOf('core/ui/ChangelogData.js');
-  const idxMgr = source.indexOf('core/ui/ChangelogManager.js');
-  if (idxData !== -1 && idxMgr !== -1 && idxData > idxMgr) {
-    fail('build.js 中 ChangelogData.js 必须排在 ChangelogManager.js 之前');
-  }
-
-  // ThemeManager 必须排在 UIManager 之前
-  const idxTheme = source.indexOf('core/ui/ThemeManager.js');
-  const idxUI = source.indexOf("'ui/UIManager.js'");
-  if (idxTheme !== -1 && idxUI !== -1 && idxTheme > idxUI) {
-    fail('build.js 中 ThemeManager.js 必须排在 UIManager.js 之前');
-  }
-}
+// ponytail: build.js 已迁 esbuild 打包，模块依赖图由 bundler 解析保证，
+// 旧版手工 <script> 顺序检查（checkBuildScriptOrder）已无意义且报假错，已删除。
+// 升级路径：若需等价的 require 完整性校验（防 script.js 漏 require 共享 UI），后续可补。
 
 // ── 执行 ──
 
 console.log('===== 校验更新日志与共享模块 =====');
 checkDataFile();
 checkNoClientCopies();
-checkBuildScriptOrder();
 
 if (errors.length > 0) {
   console.error(`\n✗ 发现 ${errors.length} 个问题:\n`);
@@ -225,5 +187,4 @@ if (errors.length > 0) {
 
 console.log('✓ 版本数据单源一致，无重复分类键');
 console.log('✓ 两端无共享模块副本');
-console.log('✓ build.js 脚本加载顺序正确');
 console.log('===== 校验通过 =====');

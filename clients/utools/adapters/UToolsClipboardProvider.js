@@ -4,7 +4,7 @@
  * 实现 ClipboardProvider 接口，封装 utools.copyImage。
  */
 
-const ClipboardProvider = require('../../../core/interfaces/ClipboardProvider.js');
+const ClipboardProvider = require('@moruteaven/sticker-core/interfaces/ClipboardProvider.js');
 
 class UToolsClipboardProvider extends ClipboardProvider {
   copyImage(imageData) {
